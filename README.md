@@ -1,7 +1,7 @@
 # Pursuit Tracker
 
 A system-agnostic, dockable progress tracker for Foundry VTT. Track multiple
-"pursuits" — chases, investigations, quests, countdowns, projects — each as a
+"pursuits", chases, investigations, quests, countdowns, projects, each as a
 slider over a configurable number of stages, with per-tracker player visibility
 and a per-tracker "let players adjust this" toggle.
 
@@ -21,7 +21,7 @@ Built for Foundry V13 (compatible with V12) using ApplicationV2.
 - **Nine panel positions**: top-left/center/right, bottom-left/center/right,
   left, right, and free-float. Free-float can be dragged anywhere, then
   locked in place.
-- **Self-aware expansion**: the pull tab is the anchor — it stays put when
+- **Self-aware expansion**: the pull tab is the anchor, it stays put when
   the panel opens or closes, and the body grows away from the nearest screen
   edge so it never extends off-screen.
 - **Auto-collapse** when idle, with a configurable delay. The pull tab
@@ -34,7 +34,7 @@ Built for Foundry V13 (compatible with V12) using ApplicationV2.
   visibility of a tracker, every connected client updates immediately. No
   reload needed.
 - **Customizable label**: rename "Pursuit Tracker" to "Chase", "Quests",
-  "Goals" — anything that fits your campaign.
+  "Goals", anything that fits your campaign.
 - **Daily reminder** prompt for the GM, optionally driven by either
   [Calendaria](https://foundryvtt.com/packages/calendaria) (`dayChange`
   hook) or
@@ -44,7 +44,7 @@ Built for Foundry V13 (compatible with V12) using ApplicationV2.
   sidebar, hotbar, scene controls, and navigation, and re-anchors live when
   the sidebar collapses or the window resizes.
 - **System-agnostic**: no system-specific dependencies. Works in D&D 5e,
-  PF2e, Forbidden Lands, FATE — anything.
+  PF2e, Forbidden Lands, FATE, anything.
 
 ---
 
@@ -75,7 +75,7 @@ save. The panel appears in the bottom-left of the canvas by default.
 ## Quick start
 
 1. **Open the panel.** Click the **Pursuit Tracker** pull tab. It auto-collapses
-   after one second of inactivity by default — hover the tab to bring it back.
+   after one second of inactivity by default, hover the tab to bring it back.
 2. **Create a pursuit** (GM only). Click the **+** button in the panel header.
    The tracker config dialog opens.
 3. **Configure it.** Give it a name, choose a number of stages (3–10), pick
@@ -150,7 +150,7 @@ Pursuit Tracker uses a three-state permission model:
 
 Player-initiated stage changes are routed through a socket: the player emits
 a request, the GM client validates the permission against the current tracker
-state, then performs the write. World-setting safety is preserved — there's
+state, then performs the write. World-setting safety is preserved, there's
 no path for a player to bypass the toggle.
 
 ---
@@ -171,7 +171,7 @@ fires the daily reminder on long rests that flagged a new day.
 
 ### Daily reminder modes
 
-Configurable in module settings. The default is **Auto-detect** — Calendaria
+Configurable in module settings. The default is **Auto-detect**, Calendaria
 wins if present, then Rest Recovery, otherwise no reminder.
 
 ---
@@ -187,10 +187,10 @@ game.modules.get("pursuittracker").api
 | Member | Description |
 |---|---|
 | `panel` | The `TrackerPanel` instance (after the `ready` hook). |
-| `store` | The `TrackerStore` class — `read()`, `get(id)`, `create(...)`, `update(id, patch)`, `delete(id)`, `setStage(id, n)`. GM-only writes. |
+| `store` | The `TrackerStore` class, `read()`, `get(id)`, `create(...)`, `update(id, patch)`, `delete(id)`, `setStage(id, n)`. GM-only writes. |
 | `open()` | Refresh and show the panel. |
 | `toggle()` | Collapse or expand the panel. |
-| `registerChromeSelector(selector)` | Tell Pursuit Tracker about a UI overlay your module renders (e.g. a custom HUD), so the panel won't anchor on top of it. Pass a CSS selector. Optional — only needed if your module's chrome lives outside Foundry's standard `#sidebar`/`#hotbar`/`#scene-controls`/`#navigation`/`#players`. |
+| `registerChromeSelector(selector)` | Tell Pursuit Tracker about a UI overlay your module renders (e.g. a custom HUD), so the panel won't anchor on top of it. Pass a CSS selector. Optional, only needed if your module's chrome lives outside Foundry's standard `#sidebar`/`#hotbar`/`#scene-controls`/`#navigation`/`#players`. |
 
 ### Hooks
 
