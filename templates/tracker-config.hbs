@@ -1,0 +1,108 @@
+{{#if tracker}}
+<section class="pt-config">
+  {{!-- Scrollable body. Footer is its sibling, not a child, so the
+        save/delete buttons stay visible regardless of stage count. --}}
+  <div class="pt-config-scroll">
+  <div class="form-group">
+    <label for="pt-name">{{localize "PURSUITTRACKER.Config.Name.Label"}}</label>
+    <div class="form-fields">
+      <input type="text" id="pt-name" name="name" value="{{tracker.name}}" />
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="pt-stages">{{localize "PURSUITTRACKER.Config.Stages.Label"}}</label>
+    <div class="form-fields">
+      <select id="pt-stages" name="stages">
+        {{#each stageCounts as |n|}}
+          <option value="{{n}}" {{#if (eq n ../tracker.stages)}}selected{{/if}}>{{n}}</option>
+        {{/each}}
+      </select>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="pt-current">{{localize "PURSUITTRACKER.Config.CurrentStage.Label"}}</label>
+    <div class="form-fields">
+      <select id="pt-current" name="currentStage">
+        {{#each currentStageOptions as |opt|}}
+          <option value="{{opt.value}}" {{#if (eq opt.value ../tracker.currentStage)}}selected{{/if}}>{{opt.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="pt-visible">{{localize "PURSUITTRACKER.Config.VisibleToPlayers.Label"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" id="pt-visible" name="visibleToPlayers" {{#if tracker.visibleToPlayers}}checked{{/if}} />
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="pt-player-editable">{{localize "PURSUITTRACKER.Config.PlayerEditable.Label"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" id="pt-player-editable" name="playerEditable" {{#if tracker.playerEditable}}checked{{/if}} />
+      <p class="hint">{{localize "PURSUITTRACKER.Config.PlayerEditable.Hint"}}</p>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="pt-bg">{{localize "PURSUITTRACKER.Config.Background.Label"}}</label>
+    <div class="form-fields pt-file-row">
+      <input type="text" id="pt-bg" name="background" value="{{tracker.background}}" />
+      <button type="button" class="pt-btn" data-action="pickBackground">
+        <i class="fa-solid fa-folder-open"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="pt-status">{{localize "PURSUITTRACKER.Config.StatusIcon.Label"}}</label>
+    <div class="form-fields pt-file-row">
+      <input type="text" id="pt-status" name="statusIcon" value="{{tracker.statusIcon}}" />
+      <button type="button" class="pt-btn" data-action="pickStatusIcon">
+        <i class="fa-solid fa-folder-open"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="pt-custom">{{localize "PURSUITTRACKER.Config.UseCustomStageIcons.Label"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" id="pt-custom" name="useCustomStageIcons" {{#if tracker.useCustomStageIcons}}checked{{/if}} />
+      <p class="hint">{{localize "PURSUITTRACKER.Config.UseCustomStageIcons.Hint"}}</p>
+    </div>
+  </div>
+
+  <fieldset class="pt-stage-icons" {{#unless tracker.useCustomStageIcons}}disabled{{/unless}}>
+    <legend>Stage icons</legend>
+    {{#each stageOptions as |opt|}}
+      <div class="form-group">
+        <label>Stage {{opt.label}}</label>
+        <div class="form-fields pt-file-row">
+          <img class="pt-stage-preview" src="{{#if opt.value}}{{opt.value}}{{else}}{{opt.defaultIcon}}{{/if}}" alt="" />
+          <input type="text" name="stageIcons.{{opt.index}}" value="{{opt.value}}" placeholder="{{opt.defaultIcon}}" />
+          <button type="button" class="pt-btn" data-action="pickStageIcon" data-stage="{{opt.index}}">
+            <i class="fa-solid fa-folder-open"></i>
+          </button>
+        </div>
+      </div>
+    {{/each}}
+  </fieldset>
+  </div>{{!-- /.pt-config-scroll --}}
+
+  <footer class="form-footer">
+    <button type="submit" class="pt-btn pt-btn-primary">
+      <i class="fa-solid fa-floppy-disk"></i> {{localize "PURSUITTRACKER.Config.Save"}}
+    </button>
+    <button type="button" class="pt-btn pt-btn-danger" data-action="delete">
+      <i class="fa-solid fa-trash"></i> {{localize "PURSUITTRACKER.Config.Delete"}}
+    </button>
+  </footer>
+</section>
+{{else}}
+<section class="pt-config">
+  <p>This pursuit no longer exists.</p>
+</section>
+{{/if}}

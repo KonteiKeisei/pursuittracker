@@ -1,0 +1,22 @@
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.vscode/
+.idea/
+
+# Claude Code per-project state
+.claude/
+
+# Build output / packaging artifacts (none today, but reserve the names)
+dist/
+build/
+*.zip
+*.log
+
+# Node / dependencies (in case tooling is added later)
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

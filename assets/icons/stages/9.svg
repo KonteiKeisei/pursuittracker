@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Stage 9">
+  <defs>
+    <radialGradient id="g9" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#3a3023"/>
+      <stop offset="100%" stop-color="#1a1611"/>
+    </radialGradient>
+  </defs>
+  <circle cx="32" cy="32" r="28" fill="url(#g9)" stroke="#d2b15a" stroke-width="3"/>
+  <text x="32" y="44" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="32" font-weight="700"
+        fill="#f1c869"
+        stroke="#1a1611" stroke-width="0.6">9</text>
+</svg>

@@ -1,0 +1,140 @@
+{{!--
+  Pursuit Tracker — main panel
+  Renders a stack of tracker rows. The pull tab is always present;
+  when [data-collapsed="true"] only the tab is interactive.
+--}}
+<button type="button"
+        class="pt-pull-tab"
+        data-action="collapse"
+        aria-label="{{label}}"
+        title="{{label}}">
+  <i class="fa-solid fa-bullseye-arrow"></i>
+  <span class="pt-pull-label">{{label}}</span>
+</button>
+
+<div class="pt-body">
+  <header class="pt-header {{#if isFree}}pt-drag-handle{{/if}}"
+          {{#if isFree}}title="{{i18n.dragHandle}}"{{/if}}>
+    <h3 class="pt-title">
+      {{#if isFree}}<i class="fa-solid fa-grip-lines pt-grip"></i>{{/if}}
+      {{label}}
+    </h3>
+    <div class="pt-header-actions">
+      {{!-- Lock toggle: shown to ALL users in free-float mode. Position and
+            lock are client-scope settings, so every user (GM or player) gets
+            to control where their own panel sits and whether it stays put. --}}
+      {{#if isFree}}
+        <button type="button"
+                class="pt-btn pt-btn-icon {{#if locked}}is-on{{/if}}"
+                data-action="toggleLock"
+                data-tooltip="{{#if locked}}{{i18n.unlock}}{{else}}{{i18n.lock}}{{/if}}">
+          <i class="fa-solid {{#if locked}}fa-lock{{else}}fa-lock-open{{/if}}"></i>
+        </button>
+      {{/if}}
+      {{!-- "+ create" is GM-only (creating trackers writes a world setting). --}}
+      {{#if isGM}}
+        <button type="button"
+                class="pt-btn pt-btn-icon"
+                data-action="create"
+                data-tooltip="{{i18n.newTracker}}">
+          <i class="fa-solid fa-plus"></i>
+        </button>
+      {{/if}}
+      {{!-- Settings cog: visible to everyone. Foundry's settings dialog
+            shows world-scope entries as read-only to non-GMs and lets each
+            player edit their own client-scope entries (position, scale,
+            auto-collapse, etc.). --}}
+      <button type="button"
+              class="pt-btn pt-btn-icon"
+              data-action="openSettings"
+              data-tooltip="{{i18n.settings}}">
+        <i class="fa-solid fa-gear"></i>
+      </button>
+    </div>
+  </header>
+
+  {{#unless hasTrackers}}
+    <p class="pt-empty">{{i18n.empty}}</p>
+  {{/unless}}
+
+  <ol class="pt-list">
+    {{#each trackers as |tracker|}}
+      <li class="pt-tracker"
+          data-tracker-id="{{tracker.id}}"
+          style="background-image: url('{{tracker.background}}'); --pt-denom: {{tracker.denom}};">
+        <div class="pt-tracker-overlay"></div>
+
+        <div class="pt-tracker-header">
+          <span class="pt-tracker-name">{{tracker.displayName}}</span>
+          <div class="pt-tracker-actions">
+            {{!-- Advance / retreat: anyone allowed by canModify (GM, or
+                  player on a tracker that's both visible AND
+                  playerEditable). Other GM-only controls follow. --}}
+            {{#if tracker.canModify}}
+              <button type="button"
+                      class="pt-btn pt-btn-icon"
+                      data-action="retreat"
+                      data-tooltip="{{@root.i18n.ret}}">
+                <i class="fa-solid fa-backward-step"></i>
+              </button>
+              <button type="button"
+                      class="pt-btn pt-btn-icon"
+                      data-action="advance"
+                      data-tooltip="{{@root.i18n.adv}}">
+                <i class="fa-solid fa-forward-step"></i>
+              </button>
+            {{/if}}
+            {{#if @root.isGM}}
+              <button type="button"
+                      class="pt-btn pt-btn-icon {{#if tracker.visibleToPlayers}}is-on{{/if}}"
+                      data-action="toggleVisibility"
+                      data-tooltip="{{@root.i18n.vis}}">
+                <i class="fa-solid {{#if tracker.visibleToPlayers}}fa-eye{{else}}fa-eye-slash{{/if}}"></i>
+              </button>
+              <button type="button"
+                      class="pt-btn pt-btn-icon"
+                      data-action="edit"
+                      data-tooltip="{{@root.i18n.edit}}">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button type="button"
+                      class="pt-btn pt-btn-icon pt-btn-danger"
+                      data-action="delete"
+                      data-tooltip="{{@root.i18n.del}}">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            {{/if}}
+          </div>
+        </div>
+
+        <div class="pt-slider {{#if @root.vertical}}pt-slider-vertical{{else}}pt-slider-horizontal{{/if}}">
+          <div class="pt-track" aria-hidden="true"></div>
+
+          <ul class="pt-stages">
+            {{#each tracker.stagesArray as |stage|}}
+              <li class="pt-stage {{#if stage.active}}is-active{{/if}} {{#if stage.passed}}is-passed{{/if}}"
+                  style="--pt-stage-pos: {{stage.index}};">
+                <button type="button"
+                        class="pt-stage-btn"
+                        data-action="stage"
+                        data-stage="{{stage.index}}"
+                        {{#unless tracker.canModify}}disabled aria-disabled="true"{{/unless}}>
+                  <img class="pt-stage-icon" src="{{stage.icon}}" alt="" />
+                </button>
+              </li>
+            {{/each}}
+          </ul>
+
+          <div class="pt-status-dot"
+               style="--pt-dot: {{tracker.dotPercent}}%;"
+               role="slider"
+               aria-valuemin="1"
+               aria-valuemax="{{tracker.stages}}"
+               aria-valuenow="{{tracker.currentStageDisplay}}">
+            <img src="{{tracker.statusIcon}}" alt="" />
+          </div>
+        </div>
+      </li>
+    {{/each}}
+  </ol>
+</div>

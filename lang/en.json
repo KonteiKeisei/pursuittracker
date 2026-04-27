@@ -1,0 +1,95 @@
+{
+  "PURSUITTRACKER.ModuleTitle": "Pursuit Tracker",
+
+  "PURSUITTRACKER.Settings.Trackers.Name": "Trackers",
+  "PURSUITTRACKER.Settings.Trackers.Hint": "World-scoped tracker definitions (managed via the panel UI).",
+
+  "PURSUITTRACKER.Settings.RestrictToGM.Name": "Restrict to GM only",
+  "PURSUITTRACKER.Settings.RestrictToGM.Hint": "If enabled, players never see the panel regardless of per-tracker visibility.",
+
+  "PURSUITTRACKER.Settings.PanelLabel.Name": "Panel label",
+  "PURSUITTRACKER.Settings.PanelLabel.Hint": "Text shown on the pull tab and panel header. Rename to match your campaign — e.g. \"Chase\", \"Goals\", \"Quests\". Leave empty to use the default.",
+  "PURSUITTRACKER.Settings.PanelLabel.Default": "Pursuit Tracker",
+
+  "PURSUITTRACKER.Settings.PanelPosition.Name": "Panel position",
+  "PURSUITTRACKER.Settings.PanelPosition.Hint": "Where the tracker panel docks on screen.",
+  "PURSUITTRACKER.Settings.PanelPosition.TopLeft": "Top Left",
+  "PURSUITTRACKER.Settings.PanelPosition.TopCenter": "Top Center",
+  "PURSUITTRACKER.Settings.PanelPosition.TopRight": "Top Right",
+  "PURSUITTRACKER.Settings.PanelPosition.BottomLeft": "Bottom Left",
+  "PURSUITTRACKER.Settings.PanelPosition.BottomCenter": "Bottom Center",
+  "PURSUITTRACKER.Settings.PanelPosition.BottomRight": "Bottom Right",
+  "PURSUITTRACKER.Settings.PanelPosition.Left": "Left Side",
+  "PURSUITTRACKER.Settings.PanelPosition.Right": "Right Side",
+  "PURSUITTRACKER.Settings.PanelPosition.Free": "Free Float (drag to position)",
+
+  "PURSUITTRACKER.Settings.PanelScale.Name": "Panel scale",
+  "PURSUITTRACKER.Settings.PanelScale.Hint": "Visual scale of the panel (50%–200%).",
+
+  "PURSUITTRACKER.Settings.AutoCollapse.Name": "Auto-collapse when idle",
+  "PURSUITTRACKER.Settings.AutoCollapse.Hint": "Fade the panel after a period of inactivity. A small pull tab remains visible.",
+
+  "PURSUITTRACKER.Settings.AutoCollapseDelay.Name": "Auto-collapse delay (seconds)",
+  "PURSUITTRACKER.Settings.AutoCollapseDelay.Hint": "How long the panel stays expanded before fading.",
+
+  "PURSUITTRACKER.Settings.DailyReminder.Name": "Daily reminder",
+  "PURSUITTRACKER.Settings.DailyReminder.Hint": "Prompt the GM to review trackers each in-game day.",
+  "PURSUITTRACKER.Settings.DailyReminder.None": "Off",
+  "PURSUITTRACKER.Settings.DailyReminder.Calendaria": "Calendaria (dayChange hook)",
+  "PURSUITTRACKER.Settings.DailyReminder.RestRecovery": "Rest Recovery 5e (long rest with newDay)",
+  "PURSUITTRACKER.Settings.DailyReminder.Auto": "Auto-detect (prefer Calendaria)",
+
+  "PURSUITTRACKER.Settings.DefaultBackground.Name": "Default tracker background",
+  "PURSUITTRACKER.Settings.DefaultBackground.Hint": "Image used for new trackers (CSS image is OK).",
+
+  "PURSUITTRACKER.Settings.DefaultStatusIcon.Name": "Default status (progress) icon",
+  "PURSUITTRACKER.Settings.DefaultStatusIcon.Hint": "The dot/marker that snaps to stages.",
+
+  "PURSUITTRACKER.Panel.Title": "Pursuits",
+  "PURSUITTRACKER.Panel.PullTab": "Pursuits",
+  "PURSUITTRACKER.Panel.NoTrackers": "No pursuits yet. Create one to begin.",
+  "PURSUITTRACKER.Panel.NewTracker": "New Pursuit",
+  "PURSUITTRACKER.Panel.OpenSettings": "Module settings",
+  "PURSUITTRACKER.Panel.Lock": "Lock position",
+  "PURSUITTRACKER.Panel.Unlock": "Unlock position (drag to move)",
+  "PURSUITTRACKER.Panel.DragHandle": "Drag to reposition",
+
+  "PURSUITTRACKER.Tracker.Edit": "Edit pursuit",
+  "PURSUITTRACKER.Tracker.Delete": "Delete pursuit",
+  "PURSUITTRACKER.Tracker.ToggleVisibility": "Toggle player visibility",
+  "PURSUITTRACKER.Tracker.VisibleToPlayers": "Visible to players",
+  "PURSUITTRACKER.Tracker.HiddenFromPlayers": "Hidden from players",
+  "PURSUITTRACKER.Tracker.AdvanceStage": "Advance one stage",
+  "PURSUITTRACKER.Tracker.RetreatStage": "Retreat one stage",
+  "PURSUITTRACKER.Tracker.Untitled": "Untitled Pursuit",
+
+  "PURSUITTRACKER.Config.Title": "Configure Pursuit",
+  "PURSUITTRACKER.Config.Name.Label": "Name",
+  "PURSUITTRACKER.Config.Stages.Label": "Number of stages (3–10)",
+  "PURSUITTRACKER.Config.CurrentStage.Label": "Current stage",
+  "PURSUITTRACKER.Config.VisibleToPlayers.Label": "Visible to players",
+  "PURSUITTRACKER.Config.PlayerEditable.Label": "Players can adjust this tracker",
+  "PURSUITTRACKER.Config.PlayerEditable.Hint": "When on, any player who can see this tracker can also advance, retreat, or click a stage on it. They can never change its name, icons, or visibility — those stay with the GM.",
+  "PURSUITTRACKER.Config.Background.Label": "Background image",
+  "PURSUITTRACKER.Config.StatusIcon.Label": "Status (progress) icon",
+  "PURSUITTRACKER.Config.UseCustomStageIcons.Label": "Use custom stage icons",
+  "PURSUITTRACKER.Config.UseCustomStageIcons.Hint": "When off, uses the bundled numeric icons (1–10).",
+  "PURSUITTRACKER.Config.StageIcon.Label": "Stage {n}",
+  "PURSUITTRACKER.Config.Save": "Save",
+  "PURSUITTRACKER.Config.Cancel": "Cancel",
+  "PURSUITTRACKER.Config.Delete": "Delete pursuit",
+  "PURSUITTRACKER.Config.ConfirmDelete": "Delete this pursuit?",
+  "PURSUITTRACKER.Config.ConfirmDeleteHint": "This cannot be undone.",
+
+  "PURSUITTRACKER.Reminder.Title": "Pursuit Tracker — Daily Check-in",
+  "PURSUITTRACKER.Reminder.Body": "A new day has begun. Review your active pursuits.",
+  "PURSUITTRACKER.Reminder.Open": "Open Trackers",
+  "PURSUITTRACKER.Reminder.Dismiss": "Dismiss",
+
+  "PURSUITTRACKER.Notifications.NoPermission": "Only the GM can modify pursuits.",
+  "PURSUITTRACKER.Notifications.Created": "Pursuit created.",
+  "PURSUITTRACKER.Notifications.Deleted": "Pursuit deleted.",
+  "PURSUITTRACKER.Notifications.Saved": "Pursuit saved.",
+
+  "PURSUITTRACKER.Keybinds.Toggle": "Toggle Pursuit Tracker panel"
+}

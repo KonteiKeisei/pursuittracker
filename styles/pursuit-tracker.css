@@ -1,0 +1,508 @@
+/* =============================================================================
+   Pursuit Tracker — scoped styles
+   All rules live under .pursuittracker so they don't bleed into Foundry's UI.
+   Theming via CSS variables. Styles intentionally unlayered: Foundry V13's
+   ApplicationV2 elements get an `.application` class with layered defaults
+   that include positioning hints — wrapping our rules in @layer makes them
+   lose to those defaults and the panel ends up at the wrong x/y.
+============================================================================= */
+
+  .pursuittracker {
+    /* --------------------------- Theme variables --------------------------- */
+    --pt-bg: rgba(20, 20, 24, 0.92);
+    --pt-bg-row: rgba(28, 28, 34, 0.85);
+    --pt-fg: #f5e9c8;
+    --pt-fg-muted: #b8ad94;
+    --pt-accent: #d2b15a;
+    --pt-accent-strong: #f1c869;
+    --pt-danger: #b34747;
+    --pt-track: rgba(255, 255, 255, 0.18);
+    --pt-track-fill: var(--pt-accent);
+    --pt-radius: 6px;
+    --pt-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+    --pt-row-h: 84px;
+    --pt-tracker-w: 360px;
+    --pt-stage-size: 28px;
+    --pt-dot-size: 22px;
+    --pt-scale: 1;
+    --pt-collapse-delay: 6s;
+    /* Stack high enough to always sit above Foundry chrome (sidebar ~50,
+       hotbar ~60, hud ~70, popped-out apps ~100) so the pull tab is never
+       hidden behind another UI element and is always clickable. Stays
+       comfortably below modal dialogs (~250+) and tooltips (~9999). */
+    --pt-z: 200;
+    /* Gutter between the panel and Foundry's chrome. The --pt-safe-* vars
+       are populated at runtime by UISafeArea; the fallbacks here are a
+       reasonable "no chrome detected" guess. */
+    --pt-gutter: 8px;
+    --pt-safe-top: 0px;
+    --pt-safe-right: 0px;
+    --pt-safe-bottom: 0px;
+    --pt-safe-left: 0px;
+
+    color: var(--pt-fg);
+    font-family: var(--font-primary, "Signika", sans-serif);
+    pointer-events: auto;
+  }
+
+  /* ============================ Panel container ============================ */
+  /*
+   * The panel root is sized by the pull tab alone — the body is absolute-
+   * positioned, so opening / closing it never resizes the panel and the tab
+   * never moves. Inline styles from TrackerPanel#applyPosition own
+   * top/right/bottom/left/transform/transform-origin; this rule only
+   * provides defaults that don't conflict.
+   */
+  .pursuittracker-panel {
+    position: fixed;
+    /* !important keeps the pull tab clickable even if another module or a
+       framework default tries to demote our stacking context. */
+    z-index: var(--pt-z) !important;
+    /* width/height: auto — driven by the tab's intrinsic size. */
+    transition: transform 0.25s ease;
+  }
+
+  /* Free float: drag-handle cursor cues. The drag itself is bound by JS. */
+  .pursuittracker-panel[data-position="free"][data-locked="true"] .pt-drag-handle  { cursor: default; }
+  .pursuittracker-panel[data-position="free"][data-locked="false"] .pt-drag-handle { cursor: grab; }
+  .pursuittracker-panel[data-position="free"][data-locked="false"].pt-floating .pt-drag-handle { cursor: grabbing; }
+
+  /* ============================== Pull tab =============================== */
+  .pursuittracker .pt-pull-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: var(--pt-bg);
+    color: var(--pt-fg);
+    border: 1px solid var(--pt-accent);
+    border-radius: var(--pt-radius);
+    cursor: pointer;
+    box-shadow: var(--pt-shadow);
+    font-size: 12px;
+    line-height: 1;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.2s ease;
+    /* The tab is the panel's flow content — its intrinsic size determines
+       the panel's bounding box, so the tab visually "stays put" when the
+       body opens/closes. */
+  }
+  .pursuittracker .pt-pull-tab:hover {
+    background: var(--pt-accent);
+    color: #1a1a1a;
+  }
+  .pursuittracker .pt-pull-tab .pt-pull-label { font-weight: 600; }
+
+  /* ============================== Body overlay ============================ */
+  /*
+   * The body is absolute-positioned relative to the panel root (which is
+   * sized by the tab). data-expand picks the side it grows from; data-align
+   * picks the cross-axis alignment. This keeps the tab anchored in place
+   * regardless of whether the body is open, closed, or animating.
+   */
+  .pursuittracker .pt-body {
+    position: absolute;
+    background: var(--pt-bg);
+    border: 1px solid var(--pt-accent);
+    border-radius: var(--pt-radius);
+    box-shadow: var(--pt-shadow);
+    padding: 8px 10px 10px;
+    width: var(--pt-tracker-w);
+    overflow: hidden auto;
+    /* Hard ceiling on body size so it can never extend past the play area —
+       shrinks instead. The safe-area vars come from UISafeArea (with vanilla
+       defaults baked in if no chrome was detected yet). */
+    max-width: calc(100vw - var(--pt-safe-left) - var(--pt-safe-right) - 2 * var(--pt-gutter));
+    max-height: calc(100vh - var(--pt-safe-top) - var(--pt-safe-bottom) - 2 * var(--pt-gutter));
+    transform-origin: var(--pt-body-origin, center);
+    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+  }
+
+  /* --- Expand direction: where the body sits relative to the tab -------- */
+  .pursuittracker-panel[data-expand="down"]  .pt-body { top: 100%; margin-top: 6px; }
+  .pursuittracker-panel[data-expand="up"]    .pt-body { bottom: 100%; margin-bottom: 6px; }
+  .pursuittracker-panel[data-expand="right"] .pt-body { left: 100%; margin-left: 6px; }
+  .pursuittracker-panel[data-expand="left"]  .pt-body { right: 100%; margin-right: 6px; }
+
+  /* --- Align: alignment along the cross axis of expand ------------------- */
+  /* For up/down expand: align horizontally relative to the tab. */
+  .pursuittracker-panel[data-expand="down"][data-align="start"] .pt-body,
+  .pursuittracker-panel[data-expand="up"][data-align="start"]   .pt-body { left: 0; --pt-body-origin: top left; }
+  .pursuittracker-panel[data-expand="down"][data-align="end"]   .pt-body,
+  .pursuittracker-panel[data-expand="up"][data-align="end"]     .pt-body { right: 0; --pt-body-origin: top right; }
+  .pursuittracker-panel[data-expand="down"][data-align="center"] .pt-body,
+  .pursuittracker-panel[data-expand="up"][data-align="center"]   .pt-body {
+    left: 50%;
+    transform: translateX(-50%);
+    --pt-body-origin: top center;
+  }
+
+  /* For left/right expand: align vertically relative to the tab. */
+  .pursuittracker-panel[data-expand="right"][data-align="start"] .pt-body,
+  .pursuittracker-panel[data-expand="left"][data-align="start"]  .pt-body { top: 0; --pt-body-origin: top left; }
+  .pursuittracker-panel[data-expand="right"][data-align="end"]   .pt-body,
+  .pursuittracker-panel[data-expand="left"][data-align="end"]    .pt-body { bottom: 0; --pt-body-origin: bottom left; }
+  .pursuittracker-panel[data-expand="right"][data-align="center"] .pt-body,
+  .pursuittracker-panel[data-expand="left"][data-align="center"]  .pt-body {
+    top: 50%;
+    transform: translateY(-50%);
+    --pt-body-origin: center left;
+  }
+
+  /* --- Origin overrides for vertical expand keep transform-origin sensible
+         so the open/close scale animation grows from the tab side. ------- */
+  .pursuittracker-panel[data-expand="up"][data-align="start"]  .pt-body { --pt-body-origin: bottom left; }
+  .pursuittracker-panel[data-expand="up"][data-align="end"]    .pt-body { --pt-body-origin: bottom right; }
+  .pursuittracker-panel[data-expand="up"][data-align="center"] .pt-body { --pt-body-origin: bottom center; }
+  .pursuittracker-panel[data-expand="left"][data-align="center"] .pt-body { --pt-body-origin: center right; }
+  .pursuittracker-panel[data-expand="left"][data-align="start"]  .pt-body { --pt-body-origin: top right; }
+  .pursuittracker-panel[data-expand="left"][data-align="end"]    .pt-body { --pt-body-origin: bottom right; }
+
+  /* --- Collapsed: hide the body without changing the panel's bounding box.
+         The tab is unaffected, so it stays exactly where it was. --------- */
+  .pursuittracker-panel[data-collapsed="true"] .pt-body {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .pursuittracker-panel[data-collapsed="true"][data-expand="down"]  .pt-body { transform: scale(0.92) translateY(-6px); }
+  .pursuittracker-panel[data-collapsed="true"][data-expand="up"]    .pt-body { transform: scale(0.92) translateY(6px); }
+  .pursuittracker-panel[data-collapsed="true"][data-expand="right"] .pt-body { transform: scale(0.92) translateX(-6px); }
+  .pursuittracker-panel[data-collapsed="true"][data-expand="left"]  .pt-body { transform: scale(0.92) translateX(6px); }
+  /* Collapsed + center align: reapply translate(-50%) into the transform. */
+  .pursuittracker-panel[data-collapsed="true"][data-align="center"][data-expand="down"]  .pt-body,
+  .pursuittracker-panel[data-collapsed="true"][data-align="center"][data-expand="up"]    .pt-body { transform: translateX(-50%) scale(0.92); }
+  .pursuittracker-panel[data-collapsed="true"][data-align="center"][data-expand="right"] .pt-body,
+  .pursuittracker-panel[data-collapsed="true"][data-align="center"][data-expand="left"]  .pt-body { transform: translateY(-50%) scale(0.92); }
+
+  .pursuittracker-panel[data-collapsed="true"] .pt-pull-tab {
+    animation: pt-pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes pt-pulse {
+    0%, 100% { box-shadow: var(--pt-shadow); }
+    50%      { box-shadow: 0 0 14px var(--pt-accent-strong); }
+  }
+
+  /* ============================== Header ============================== */
+  .pursuittracker .pt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .pursuittracker .pt-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--pt-accent-strong);
+  }
+  .pursuittracker .pt-header-actions { display: flex; gap: 4px; }
+  .pursuittracker .pt-drag-handle { user-select: none; touch-action: none; }
+  .pursuittracker .pt-grip {
+    margin-right: 6px;
+    color: var(--pt-fg-muted);
+    font-size: 11px;
+    vertical-align: middle;
+  }
+
+  /* Brief highlight when scrolling to our module's section in SettingsConfig. */
+  .pt-settings-flash {
+    animation: pt-flash 1.5s ease-out;
+    border-radius: 4px;
+  }
+  @keyframes pt-flash {
+    0%, 100% { box-shadow: none; }
+    50%      { box-shadow: 0 0 0 3px rgba(241, 200, 105, 0.65); }
+  }
+
+  .pursuittracker .pt-empty {
+    font-size: 12px;
+    color: var(--pt-fg-muted);
+    text-align: center;
+    padding: 18px 8px;
+    margin: 0;
+  }
+
+  /* ============================== Buttons ============================== */
+  .pursuittracker .pt-btn {
+    background: rgba(255,255,255,0.06);
+    color: var(--pt-fg);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font: inherit;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .pursuittracker .pt-btn:hover {
+    background: var(--pt-accent);
+    color: #1a1a1a;
+    border-color: var(--pt-accent);
+  }
+  .pursuittracker .pt-btn-icon {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    justify-content: center;
+  }
+  .pursuittracker .pt-btn-primary {
+    background: var(--pt-accent);
+    color: #1a1a1a;
+    border-color: var(--pt-accent-strong);
+    font-weight: 600;
+  }
+  .pursuittracker .pt-btn-danger:hover {
+    background: var(--pt-danger);
+    color: #fff;
+    border-color: var(--pt-danger);
+  }
+  .pursuittracker .pt-btn.is-on { color: var(--pt-accent-strong); border-color: var(--pt-accent); }
+
+  /* ============================== Tracker row ============================== */
+  .pursuittracker .pt-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pursuittracker .pt-tracker {
+    position: relative;
+    min-height: var(--pt-row-h);
+    padding: 8px 10px;
+    border-radius: 5px;
+    background-color: var(--pt-bg-row);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    isolation: isolate;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .pursuittracker .pt-tracker-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      to bottom,
+      rgba(0,0,0,0.55) 0%,
+      rgba(0,0,0,0.25) 60%,
+      rgba(0,0,0,0.55) 100%
+    );
+    z-index: 0;
+  }
+  .pursuittracker .pt-tracker > * { position: relative; z-index: 1; }
+
+  .pursuittracker .pt-tracker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .pursuittracker .pt-tracker-name {
+    font-weight: 600;
+    color: var(--pt-fg);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.85);
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+  }
+  .pursuittracker .pt-tracker-actions {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ============================== Slider ============================== */
+  .pursuittracker .pt-slider {
+    position: relative;
+    height: 36px;
+    margin: 4px 14px 8px;
+  }
+  .pursuittracker .pt-slider-vertical {
+    width: 36px;
+    height: 180px;
+    margin: 6px 18px 6px 18px;
+  }
+  .pursuittracker .pt-track {
+    position: absolute;
+    background: var(--pt-track);
+    border-radius: 999px;
+  }
+  .pursuittracker .pt-slider-horizontal .pt-track {
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 4px;
+    transform: translateY(-50%);
+  }
+  .pursuittracker .pt-slider-vertical .pt-track {
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    transform: translateX(-50%);
+  }
+
+  .pursuittracker .pt-stages {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    inset: 0;
+  }
+  .pursuittracker .pt-stage {
+    --pt-stage-pos: 0;
+    position: absolute;
+    width: var(--pt-stage-size);
+    height: var(--pt-stage-size);
+    transform: translate(-50%, -50%);
+  }
+  /* Equidistant placement along the track. The denominator is (stages-1),
+     which we encode at runtime via the parent's --pt-denom — but a simpler
+     approach is to do the math in JS. We use raw stage-pos and compute via
+     calc with a custom property set per tracker:                             */
+  .pursuittracker .pt-tracker { --pt-denom: 1; }
+  .pursuittracker .pt-slider-horizontal .pt-stage {
+    top: 50%;
+    left: calc((var(--pt-stage-pos) / var(--pt-denom)) * 100%);
+  }
+  .pursuittracker .pt-slider-vertical .pt-stage {
+    left: 50%;
+    top: calc((var(--pt-stage-pos) / var(--pt-denom)) * 100%);
+  }
+
+  .pursuittracker .pt-stage-btn {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 2px solid rgba(255,255,255,0.35);
+    background: rgba(0,0,0,0.55);
+    border-radius: 50%;
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  }
+  .pursuittracker .pt-stage-btn:hover {
+    border-color: var(--pt-accent-strong);
+    transform: scale(1.1);
+  }
+  .pursuittracker .pt-stage-btn:disabled {
+    cursor: default;
+  }
+  .pursuittracker .pt-stage.is-passed .pt-stage-btn { border-color: var(--pt-accent); }
+  .pursuittracker .pt-stage.is-active  .pt-stage-btn {
+    border-color: var(--pt-accent-strong);
+    box-shadow: 0 0 10px var(--pt-accent-strong);
+  }
+  .pursuittracker .pt-stage-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.6));
+    pointer-events: none;
+  }
+
+  /* ============================== Status dot ============================== */
+  .pursuittracker .pt-status-dot {
+    position: absolute;
+    width: var(--pt-dot-size);
+    height: var(--pt-dot-size);
+    border-radius: 50%;
+    background: var(--pt-accent-strong);
+    border: 2px solid #1a1a1a;
+    box-shadow: 0 0 12px var(--pt-accent-strong);
+    cursor: grab;
+    transform: translate(-50%, -50%);
+    transition: left 0.25s ease, top 0.25s ease;
+    overflow: hidden;
+    z-index: 2;
+  }
+  .pursuittracker .pt-slider-horizontal .pt-status-dot {
+    top: 50%;
+    left: var(--pt-dot, 0%);
+  }
+  .pursuittracker .pt-slider-vertical .pt-status-dot {
+    left: 50%;
+    top: var(--pt-dot, 0%);
+  }
+  .pursuittracker .pt-tracker.pt-dragging .pt-status-dot { cursor: grabbing; transition: none; }
+  .pursuittracker .pt-status-dot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.6));
+  }
+
+  /* ============================== Config dialog ============================== */
+  /*
+   * The dialog is a flex column: scroll wrapper takes available height,
+   * footer pins itself to the bottom. Total dialog never exceeds 80vh — at
+   * 10 stages the form would otherwise grow taller than the viewport and
+   * push the save/delete buttons below the fold.
+   */
+  .pursuittracker-config .pt-config {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(80vh - 60px); /* leave room for the window's title bar */
+    min-height: 0;
+  }
+  .pursuittracker-config .pt-config-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px; /* breathing room for the scrollbar gutter */
+  }
+  .pursuittracker-config .pt-file-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .pursuittracker-config .pt-file-row input[type="text"] {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .pursuittracker-config .pt-stage-icons {
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin: 8px 0;
+  }
+  .pursuittracker-config .pt-stage-icons[disabled] { opacity: 0.45; pointer-events: none; }
+  .pursuittracker-config .pt-stage-icons legend {
+    padding: 0 6px;
+    font-size: 12px;
+    color: var(--pt-fg-muted, #aaa);
+  }
+  .pursuittracker-config .pt-stage-preview {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    background: rgba(0,0,0,0.25);
+    border-radius: 4px;
+  }
+  .pursuittracker-config .form-footer {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    /* Stay clear of the scroll wrapper's content as it scrolls past. */
+    background: var(--pt-bg, rgba(20, 20, 24, 0.92));
+  }
