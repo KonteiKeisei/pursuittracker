@@ -7,6 +7,9 @@ and a per-tracker "let players adjust this" toggle.
 
 Built for Foundry V13 (compatible with V12) using ApplicationV2.
 
+<img width="503" height="499" alt="image" src="https://github.com/user-attachments/assets/d976b73f-f43b-45ac-8863-6054d61b515c" />
+
+
 ---
 
 ## Features
