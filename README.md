@@ -1,5 +1,5 @@
 # Pursuit Tracker
-
+###AI Generated Code###
 A system-agnostic, dockable progress tracker for Foundry VTT. Track multiple
 "pursuits", chases, investigations, quests, countdowns, projects, each as a
 slider over a configurable number of stages, with per-tracker player visibility
