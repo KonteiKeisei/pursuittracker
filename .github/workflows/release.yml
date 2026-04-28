@@ -1,0 +1,82 @@
+name: Release
+
+# Triggered on annotated or lightweight version tags. Push a tag like
+# `v1.2.3` and this workflow:
+#   1. stamps `module.json` with the matching version + per-tag download URL,
+#   2. builds `module.zip` (everything except the repo / CI plumbing),
+#   3. creates a GitHub release with both `module.json` and `module.zip`
+#      attached, so Foundry's "manifest URL" install pattern keeps working.
+#
+# The workflow does NOT modify the repo's tracked `module.json` — only the
+# copy that goes into the release. Keeping the source file untouched means
+# branches stay version-clean between tags.
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Resolve version from tag
+        id: tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $VERSION"
+
+      - name: Stamp module.json with version + download URL
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
+          REPO: ${{ github.repository }}
+        run: |
+          DOWNLOAD="https://github.com/${REPO}/releases/download/v${VERSION}/module.zip"
+          jq --arg v "$VERSION" --arg d "$DOWNLOAD" \
+             '.version = $v | .download = $d' \
+             module.json > module.json.tmp
+          mv module.json.tmp module.json
+          echo "--- stamped module.json ---"
+          jq '{id, version, manifest, download}' module.json
+
+      - name: Build module.zip
+        run: |
+          # Explicit include list — anything not on this list stays out of
+          # the zip. That keeps repo plumbing (.git, .github, .gitignore,
+          # CI artifacts) from leaking into user installs.
+          zip -r module.zip \
+            module.json \
+            README.md \
+            CHANGELOG.md \
+            LICENSE \
+            scripts \
+            styles \
+            templates \
+            lang \
+            assets
+          echo "--- module.zip contents ---"
+          unzip -l module.zip | tail -n +4 | head -40
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          # Use --generate-notes for an auto-generated changelog from
+          # commits since the previous tag. Override at release time via
+          # the GitHub UI if you want richer notes.
+          gh release create "v${VERSION}" \
+            --title "v${VERSION}" \
+            --generate-notes \
+            module.json \
+            module.zip
