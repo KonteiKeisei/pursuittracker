@@ -52,23 +52,6 @@ Built for Foundry V13 (compatible with V12) using ApplicationV2.
 
 ---
 
-## Installation
-
-### From the Foundry module browser
-
-1. Open **Add-on Modules** → **Install Module**.
-2. Search for **Pursuit Tracker**.
-3. Click **Install**.
-
-### Manual install
-
-Paste this manifest URL into the **Manifest URL** field at the bottom of
-the install dialog:
-
-```
-https://github.com/KonteiKeisei/pursuittracker/releases/latest/download/module.json
-```
-
 ### Enable
 
 In your world's **Manage Modules** screen, tick **Pursuit Tracker** and
