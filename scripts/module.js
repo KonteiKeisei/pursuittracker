@@ -28,7 +28,37 @@ Hooks.once("init", () => {
      * the Pursuit Tracker panel won't overlap them.
      * Example: game.modules.get("pursuittracker").api.registerChromeSelector("#my-hud");
      */
-    registerChromeSelector
+    registerChromeSelector,
+    /**
+     * Diagnostic snapshot. Run from the browser console:
+     *   game.modules.get("pursuittracker").api.diagnose()
+     * to get the current user's role/isGM, the raw stored trackers, and
+     * what `visibleFor` returns for the local user. Useful for debugging
+     * "I'm a player but seeing GM-only trackers" reports.
+     */
+    diagnose() {
+      const user = game.user;
+      const raw = TrackerStore.read();
+      const visible = TrackerStore.visibleFor(user);
+      const summary = {
+        user: {
+          name: user?.name,
+          id: user?.id,
+          role: user?.role,
+          isGM: user?.isGM
+        },
+        rawTrackers: raw.map((t) => ({
+          name: t.name,
+          visibleToPlayers: t.visibleToPlayers,
+          playerEditable: t.playerEditable,
+          typeOfVisibleToPlayers: typeof t.visibleToPlayers
+        })),
+        visibleAfterFilter: visible.map((t) => t.name),
+        restrictToGM: game.settings.get(MODULE_ID, SETTINGS.RESTRICT_TO_GM)
+      };
+      console.log(`[${MODULE_ID}] diagnose:`, summary);
+      return summary;
+    }
   };
 });
 

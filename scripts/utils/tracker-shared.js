@@ -8,6 +8,7 @@
 import { MODULE_ID, SETTINGS, SOCKET, SOCKET_MSG } from "../constants.js";
 import { TrackerStore } from "../data/tracker-store.js";
 import { canModifyTracker, resolveStageIcon } from "../data/tracker-model.js";
+import { TrackerConfig } from "../apps/tracker-config.js";
 
 /**
  * Build the displayable shape of a tracker for templates: stage list with
@@ -92,7 +93,8 @@ function wireTrackerRow(trackerEl, vertical) {
   const cleanups = [];
   const id = trackerEl.dataset.trackerId;
 
-  const onClick = (action, extra) => async (ev) => {
+  // Stage-change actions — gated by the live canModifyTracker check.
+  const onStageAction = (action, target) => async (ev) => {
     ev.preventDefault();
     ev.stopPropagation();
     const t = TrackerStore.get(id);
@@ -102,27 +104,49 @@ function wireTrackerRow(trackerEl, vertical) {
     } else if (action === "retreat") {
       await requestStageChange(t, t.currentStage - 1);
     } else if (action === "stage") {
-      const stage = Number(extra?.dataset?.stage);
+      const stage = Number(target?.dataset?.stage);
       if (Number.isFinite(stage)) await requestStageChange(t, stage);
     }
   };
 
-  // Action buttons.
-  for (const btn of trackerEl.querySelectorAll('[data-action="advance"]')) {
-    const h = onClick("advance");
-    btn.addEventListener("click", h);
-    cleanups.push(() => btn.removeEventListener("click", h));
-  }
-  for (const btn of trackerEl.querySelectorAll('[data-action="retreat"]')) {
-    const h = onClick("retreat");
-    btn.addEventListener("click", h);
-    cleanups.push(() => btn.removeEventListener("click", h));
-  }
-  for (const btn of trackerEl.querySelectorAll('[data-action="stage"]')) {
-    const h = onClick("stage", btn);
-    btn.addEventListener("click", h);
-    cleanups.push(() => btn.removeEventListener("click", h));
-  }
+  // GM-only management actions — visibility toggle, edit, delete. We
+  // re-check `game.user.isGM` at fire time so a GM-removed account can't
+  // accidentally hold an enabled handler.
+  const onManageAction = (action) => async (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (!game.user?.isGM) return;
+    const t = TrackerStore.get(id);
+    if (!t) return;
+    if (action === "toggleVisibility") {
+      await TrackerStore.update(id, { visibleToPlayers: !t.visibleToPlayers });
+    } else if (action === "edit") {
+      new TrackerConfig({ trackerId: id }).render({ force: true });
+    } else if (action === "delete") {
+      const ok = await foundry.applications.api.DialogV2.confirm({
+        window: { title: "PURSUITTRACKER.Config.ConfirmDelete" },
+        content: `<p>${game.i18n.localize("PURSUITTRACKER.Config.ConfirmDeleteHint")}</p>`,
+        modal: true
+      });
+      if (!ok) return;
+      await TrackerStore.delete(id);
+    }
+  };
+
+  const wire = (action, factory) => {
+    for (const btn of trackerEl.querySelectorAll(`[data-action="${action}"]`)) {
+      const h = factory(action, btn);
+      btn.addEventListener("click", h);
+      cleanups.push(() => btn.removeEventListener("click", h));
+    }
+  };
+
+  wire("advance", onStageAction);
+  wire("retreat", onStageAction);
+  wire("stage", onStageAction);
+  wire("toggleVisibility", onManageAction);
+  wire("edit", onManageAction);
+  wire("delete", onManageAction);
 
   // Drag-to-snap on the status dot.
   const dot = trackerEl.querySelector(".pt-status-dot");

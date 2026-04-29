@@ -51,10 +51,21 @@ export class TrackerStore {
     return this.update(id, { currentStage: clampStage(newStage, t.stages) });
   }
 
-  /** Return only trackers a non-GM user should see. */
+  /**
+   * Return only trackers a non-GM user should see.
+   *
+   * Strict checks: `user.isGM === true` AND `user.role >= 3` (Assistant GM
+   * or Gamemaster) — Foundry's User#isGM is a getter, but we cross-check
+   * the role number anyway in case anything has wrapped the user object in
+   * a way that lies. The filter uses `=== true` so truthy strings or
+   * numbers stored in the world setting can't sneak through.
+   */
   static visibleFor(user) {
+    if (!user) return [];
     const list = this.read();
-    if (user.isGM) return list;
-    return list.filter((t) => t.visibleToPlayers);
+    const ROLE_ASSISTANT = 3;
+    const isGM = user.isGM === true && Number(user.role) >= ROLE_ASSISTANT;
+    if (isGM) return list;
+    return list.filter((t) => t?.visibleToPlayers === true);
   }
 }

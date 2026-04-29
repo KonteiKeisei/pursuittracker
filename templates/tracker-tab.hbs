@@ -18,8 +18,10 @@
 
         <div class="pt-tracker-header">
           <span class="pt-tracker-name">{{tracker.displayName}}</span>
-          {{#if tracker.canModify}}
-            <div class="pt-tracker-actions">
+          <div class="pt-tracker-actions">
+            {{!-- Stage controls: anyone allowed by canModify (GM, or
+                  player-editable for the viewer). --}}
+            {{#if tracker.canModify}}
               <button type="button"
                       class="pt-btn pt-btn-icon"
                       data-action="retreat"
@@ -32,8 +34,31 @@
                       data-tooltip="{{@root.pursuittracker.i18n.adv}}">
                 <i class="fa-solid fa-forward-step"></i>
               </button>
-            </div>
-          {{/if}}
+            {{/if}}
+            {{!-- Management controls: GM-only. The eye icon's state mirrors
+                  visibleToPlayers so the GM sees player-visibility at a
+                  glance from the sheet tab without bouncing to the panel. --}}
+            {{#if @root.pursuittracker.isGM}}
+              <button type="button"
+                      class="pt-btn pt-btn-icon {{#if tracker.visibleToPlayers}}is-on{{/if}}"
+                      data-action="toggleVisibility"
+                      data-tooltip="{{@root.pursuittracker.i18n.vis}}">
+                <i class="fa-solid {{#if tracker.visibleToPlayers}}fa-eye{{else}}fa-eye-slash{{/if}}"></i>
+              </button>
+              <button type="button"
+                      class="pt-btn pt-btn-icon"
+                      data-action="edit"
+                      data-tooltip="{{@root.pursuittracker.i18n.edit}}">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button type="button"
+                      class="pt-btn pt-btn-icon pt-btn-danger"
+                      data-action="delete"
+                      data-tooltip="{{@root.pursuittracker.i18n.del}}">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            {{/if}}
+          </div>
         </div>
 
         <div class="pt-slider pt-slider-horizontal">

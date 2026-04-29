@@ -509,29 +509,64 @@
 
   /* ============================== Tidy 5e tab ============================== */
   /*
-   * Embedded inside a Tidy 5e Sheets tab. Unlike the floating panel, this
-   * surface lives inside the host application and must resize with it —
-   * the sheet is freely resizable. We do that by:
-   *   1. Letting the tab content fill its container (100% width).
-   *   2. Re-binding --pt-tracker-w to 100% so each tracker row spans the
-   *      full available width instead of the panel's fixed 360px.
-   *   3. Letting the host sheet handle vertical scrolling — we don't
-   *      cap height here.
+   * Embedded inside a Tidy 5e Sheets tab. Two requirements that drove this
+   * block:
+   *
+   *   1. Resize with the sheet. Each tracker row spans the available width
+   *      via --pt-tracker-w: 100%. The sheet's own scroll handles overflow.
+   *
+   *   2. Survive Tidy's host CSS. Tidy is a Svelte app and applies
+   *      component-scoped resets to <ul>, <li>, <button> that can flatten
+   *      our absolute-positioned stage circles into invisible inline-block
+   *      flex children. We:
+   *        - redefine every theme variable directly on .pursuittracker-tab
+   *          so the cascade can't lose them;
+   *        - explicitly re-state position / display / size / margin /
+   *          list-style on the slider, stages list, and each stage so no
+   *          host reset zeroes them.
+   */
+  /*
+   * Scope all of the tab's CSS to `.pt-tab-root` — that class lives on
+   * the <section> at the top of templates/tracker-tab.hbs, which we own.
+   * Tidy may or may not apply `tabContentsClasses` exactly the way we
+   * expect, but `.pt-tab-root` is guaranteed because it's in our own
+   * template. Variables get fallback values inside every `var()` call
+   * for the same reason — if the cascade doesn't reach our rules,
+   * dimensions still resolve to a real pixel value, not `auto`.
    */
   .pursuittracker-tab,
-  .pursuittracker-tab .pt-tab-root {
-    /* Override the per-row width so trackers fill the tab. */
+  .pt-tab-root {
+    --pt-bg: rgba(20, 20, 24, 0.92);
+    --pt-bg-row: rgba(28, 28, 34, 0.85);
+    --pt-fg: #f5e9c8;
+    --pt-fg-muted: #b8ad94;
+    --pt-accent: #d2b15a;
+    --pt-accent-strong: #f1c869;
+    --pt-track: rgba(255, 255, 255, 0.18);
+    --pt-radius: 6px;
+    --pt-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+    --pt-row-h: 90px;
+    --pt-stage-size: 28px;
+    --pt-dot-size: 22px;
+    /* Tab-scoped sizes. Static — no container-query scaling, no var()
+       indirection. The two values are independent and stay constant
+       regardless of the sheet's width. */
+    --pt-tab-stage-size: 30px;
+    --pt-tab-dot-size: 28px;
     --pt-tracker-w: 100%;
     width: 100%;
     box-sizing: border-box;
+    color: var(--pt-fg, #f5e9c8);
   }
-  .pursuittracker-tab .pt-tab-root {
+  .pt-tab-root {
     display: flex;
     flex-direction: column;
     gap: 8px;
     padding: 4px 2px;
+    width: 100%;
+    box-sizing: border-box;
   }
-  .pursuittracker-tab .pt-list {
+  .pt-tab-root .pt-list {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -540,18 +575,134 @@
     gap: 8px;
     width: 100%;
   }
-  /* Each tracker row should fill the tab width and breathe vertically. */
-  .pursuittracker-tab .pt-tracker {
+  .pt-tab-root .pt-tracker {
     width: 100%;
-    min-height: var(--pt-row-h);
+    min-height: var(--pt-row-h, 84px);
+    list-style: none;
   }
-  /* The slider has fixed pixel margins in the panel; let it expand to the
-     row's width here so the stages spread out as the sheet grows. */
-  .pursuittracker-tab .pt-slider {
-    margin: 6px 18px 10px;
+  /* --- Slider + stages: container needs explicit height for the absolute
+         children to lay out correctly. Sized off the tab stage size +
+         margin so taller stage circles don't get clipped. ----- */
+  .pt-tab-root .pt-slider {
+    position: relative;
+    display: block;
+    height: 46px !important; /* 30 stage + 16 breathing */
+    min-height: 46px;
+    margin: 8px 24px 14px;
+    overflow: visible;
   }
-  /* Empty state typography, scoped to the tab so the panel keeps its own. */
-  .pursuittracker-tab .pt-empty {
+  .pt-tab-root .pt-stages {
+    position: absolute;
+    inset: 0;
+    display: block;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+  }
+  /* Stage circles. All selectors are scoped under `.pt-tab-root` — a class
+     we own on our own template's root <section> — so the cascade can't be
+     defeated by Tidy putting `tabContentsClasses` somewhere unexpected.
+     `!important` on dimensions, with literal pixel fallbacks inside every
+     var(), guarantees a real size even if the variable cascade is broken
+     and Tidy's CSS is fighting us. */
+  .pt-tab-root .pt-slider .pt-stage {
+    position: absolute;
+    display: block;
+    /* Use the tab-specific size, fall back to the panel size, then to a
+       literal pixel value if the variable cascade is broken. */
+    /* Hardcoded width/height — the variable lookup was failing under Tidy
+       in some cases, leaving the stages near-invisible. Static value
+       wins always. The first-declared !important also out-ranks the
+       JS-inline backstop's older value, so the live size is locked here. */
+    width: 30px !important;
+    height: 30px !important;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    top: 50%;
+    left: calc((var(--pt-stage-pos, 0) / var(--pt-denom, 1)) * 100%);
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    box-sizing: border-box;
+  }
+  .pt-tab-root .pt-stage-btn {
+    /* Tidy applies a default `padding: 0px 12px 0.5px` to all <button>
+       elements via its component CSS. In a 30px-wide button, that
+       collapses the content area to 6px — which is why the SVG inside
+       was rendering tiny. !important on padding (and box-sizing) is the
+       only way to override Tidy's button reset. */
+    display: flex !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 50%;
+    cursor: pointer;
+    overflow: hidden;
+    line-height: 1;
+  }
+  .pt-tab-root .pt-stage-btn:disabled { cursor: default; }
+  .pt-tab-root .pt-stage.is-passed .pt-stage-btn { border-color: var(--pt-accent, #d2b15a); }
+  .pt-tab-root .pt-stage.is-active .pt-stage-btn {
+    border-color: var(--pt-accent-strong, #f1c869);
+    box-shadow: 0 0 10px var(--pt-accent-strong, #f1c869);
+  }
+  .pt-tab-root .pt-stage-icon {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none;
+    max-height: none;
+    object-fit: contain;
+    pointer-events: none;
+  }
+  /* Status dot. Same scoping. */
+  .pt-tab-root .pt-status-dot {
+    position: absolute;
+    display: block;
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 50%;
+    background: var(--pt-accent-strong, #f1c869);
+    border: 2px solid #1a1a1a;
+    box-shadow: 0 0 12px var(--pt-accent-strong, #f1c869);
+    cursor: grab;
+    top: 50%;
+    left: var(--pt-dot, 0%);
+    transform: translate(-50%, -50%);
+    overflow: hidden;
+    z-index: 2;
+    box-sizing: border-box;
+  }
+  .pt-tab-root .pt-status-dot img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none;
+    max-height: none;
+    object-fit: cover;
+    pointer-events: none;
+  }
+  .pt-tab-root .pt-track {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 4px;
+    transform: translateY(-50%);
+    background: var(--pt-track);
+    border-radius: 999px;
+  }
+  .pt-tab-root .pt-empty {
     color: var(--pt-fg-muted);
     text-align: center;
     padding: 18px 8px;
