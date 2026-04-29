@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-04-29
+
+### Added
+
+- **Tidy 5e Sheets integration**. When the
+  [Tidy 5e Sheets](https://foundryvtt.com/packages/tidy5e-sheet) module is
+  active, Pursuit Tracker registers a new tab on character and NPC sheets
+  showing every tracker the viewing user is allowed to see. The tab title
+  binds to the configured panel label (`() => resolvePanelLabel()`) so
+  renaming the module to "Chase", "Goals", etc. carries through to the
+  sheet tab without a reload.
+- Tab content uses the same advance / retreat / click-stage / drag-the-dot
+  controls as the floating panel. Permission gating is identical — players
+  see read-only sliders unless the tracker has both `visibleToPlayers` and
+  `playerEditable` set.
+- Tab content is fully resize-aware: each tracker row spans the available
+  width of the sheet's tab area, so adjusting the sheet's width / height
+  reflows the trackers cleanly.
+- Real-time sync into open Tidy sheets: when the GM mutates a tracker or
+  changes the panel label, every open Tidy sheet re-renders so the tab
+  picks up the change immediately. Non-Tidy sheets are untouched.
+- New custom hook `pursuittracker.dataChanged` fired whenever the tracker
+  list or panel label changes, for other modules that want to react.
+
+### Changed
+
+- `enrichTracker(t)`, `requestStageChange(tracker, stage)`, and
+  `resolvePanelLabel()` extracted from the panel into
+  `scripts/utils/tracker-shared.js` so the floating panel and the Tidy 5e
+  tab consume a single source of truth.
+- New shared `bindTrackerInteractions(rootElement, options)` helper wires
+  click handlers and drag-to-snap on any tracker DOM, used by the Tidy
+  tab. The floating panel still uses ApplicationV2 action delegation, so
+  this is additive.
+
+### Module manifest
+
+- `tidy5e-sheet` added to `recommends`.
+
 ## [1.0.0] - 2026-04-27
 
 Initial release.
@@ -51,4 +90,5 @@ Initial release.
 - Keybind for toggling the panel (default `Ctrl+P`, configurable).
 - English localization.
 
+[1.1.0]: https://github.com/KonteiKeisei/pursuittracker/releases/tag/v1.1.0
 [1.0.0]: https://github.com/KonteiKeisei/pursuittracker/releases/tag/v1.0.0

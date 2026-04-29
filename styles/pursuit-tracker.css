@@ -506,3 +506,55 @@
     /* Stay clear of the scroll wrapper's content as it scrolls past. */
     background: var(--pt-bg, rgba(20, 20, 24, 0.92));
   }
+
+  /* ============================== Tidy 5e tab ============================== */
+  /*
+   * Embedded inside a Tidy 5e Sheets tab. Unlike the floating panel, this
+   * surface lives inside the host application and must resize with it —
+   * the sheet is freely resizable. We do that by:
+   *   1. Letting the tab content fill its container (100% width).
+   *   2. Re-binding --pt-tracker-w to 100% so each tracker row spans the
+   *      full available width instead of the panel's fixed 360px.
+   *   3. Letting the host sheet handle vertical scrolling — we don't
+   *      cap height here.
+   */
+  .pursuittracker-tab,
+  .pursuittracker-tab .pt-tab-root {
+    /* Override the per-row width so trackers fill the tab. */
+    --pt-tracker-w: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .pursuittracker-tab .pt-tab-root {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 2px;
+  }
+  .pursuittracker-tab .pt-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+  /* Each tracker row should fill the tab width and breathe vertically. */
+  .pursuittracker-tab .pt-tracker {
+    width: 100%;
+    min-height: var(--pt-row-h);
+  }
+  /* The slider has fixed pixel margins in the panel; let it expand to the
+     row's width here so the stages spread out as the sheet grows. */
+  .pursuittracker-tab .pt-slider {
+    margin: 6px 18px 10px;
+  }
+  /* Empty state typography, scoped to the tab so the panel keeps its own. */
+  .pursuittracker-tab .pt-empty {
+    color: var(--pt-fg-muted);
+    text-align: center;
+    padding: 18px 8px;
+    margin: 0;
+    font-size: 12px;
+  }

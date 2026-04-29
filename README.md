@@ -144,6 +144,18 @@ no path for a player to bypass the toggle.
 
 ## Module integrations
 
+### Tidy 5e Sheets
+
+If [Tidy 5e Sheets](https://foundryvtt.com/packages/tidy5e-sheet) is enabled,
+Pursuit Tracker adds a new tab to every character and NPC sheet. The tab
+title is the configured panel label (so renaming the module to "Chase" or
+"Goals" carries through to the sheet tab without a reload). Players only see
+the tab when at least one tracker is visible to them; GMs always see it.
+
+Stage controls in the tab work the same as the floating panel — advance,
+retreat, click a stage, drag the dot — and respect the same per-tracker
+permissions. Tab content resizes with the sheet.
+
 ### Calendaria
 
 If [Calendaria](https://github.com/Sayshal/Calendaria) is enabled, Pursuit

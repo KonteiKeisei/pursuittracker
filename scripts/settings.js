@@ -19,6 +19,17 @@ export function registerSettings() {
     panel?.refreshLayout?.();
   };
 
+  /**
+   * Broadcast that something we render changed (tracker list, label, etc.)
+   * so other module surfaces (Tidy 5e tab integration) can re-render. The
+   * floating panel still uses its direct `refreshLayout` path because it
+   * needs visibility-gating logic; Tidy and any future surface listen via
+   * this hook.
+   */
+  const emitDataChanged = () => {
+    Hooks.callAll(`${MODULE_ID}.dataChanged`);
+  };
+
   game.settings.register(MODULE_ID, SETTINGS.TRACKERS, {
     name: "PURSUITTRACKER.Settings.Trackers.Name",
     hint: "PURSUITTRACKER.Settings.Trackers.Hint",
@@ -35,6 +46,7 @@ export function registerSettings() {
     onChange: () => {
       const panel = game.modules.get(MODULE_ID)?.api?.panel;
       panel?.refreshLayout();
+      emitDataChanged();
     }
   });
 
@@ -45,7 +57,13 @@ export function registerSettings() {
     config: true,
     type: String,
     default: "",
-    onChange: reRenderPanel
+    onChange: () => {
+      reRenderPanel();
+      // The Tidy 5e tab title is bound to a `() => resolvePanelLabel()`
+      // function, so a refresh of any open Tidy sheet will pick up the
+      // new label automatically.
+      emitDataChanged();
+    }
   });
 
   game.settings.register(MODULE_ID, SETTINGS.RESTRICT_TO_GM, {

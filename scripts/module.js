@@ -4,6 +4,7 @@ import { TrackerPanel } from "./apps/tracker-panel.js";
 import { TrackerStore } from "./data/tracker-store.js";
 import { canModifyTracker } from "./data/tracker-model.js";
 import { registerDailyReminder } from "./integrations/daily-reminder.js";
+import { registerTidyIntegration } from "./integrations/tidy-sheet.js";
 import { registerChromeSelector } from "./ui-safe-area.js";
 
 /**
@@ -76,3 +77,4 @@ Hooks.once("ready", async () => {
 });
 
 registerDailyReminder();
+registerTidyIntegration();

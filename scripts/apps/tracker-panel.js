@@ -1,26 +1,12 @@
-import { MODULE_ID, SETTINGS, POSITIONS, SOCKET, SOCKET_MSG } from "../constants.js";
+import { MODULE_ID, SETTINGS, POSITIONS } from "../constants.js";
 import { TrackerStore } from "../data/tracker-store.js";
-import { resolveStageIcon, canModifyTracker } from "../data/tracker-model.js";
+import { canModifyTracker } from "../data/tracker-model.js";
 import { TrackerConfig } from "./tracker-config.js";
-
-/**
- * Apply a stage change in the right place: GMs write the world setting
- * directly; players emit a socket request and the GM client performs the
- * write after re-validating. Either way the world setting changes, the
- * onChange fires on every client, and every panel re-renders.
- */
-async function requestStageChange(tracker, newStage) {
-  if (game.user.isGM) {
-    await TrackerStore.setStage(tracker.id, newStage);
-    return;
-  }
-  game.socket?.emit(SOCKET, {
-    type: SOCKET_MSG.REQUEST_SET_STAGE,
-    userId: game.user.id,
-    trackerId: tracker.id,
-    stage: newStage
-  });
-}
+import {
+  enrichTracker,
+  requestStageChange,
+  resolvePanelLabel
+} from "../utils/tracker-shared.js";
 
 const GUTTER = 8;
 /** Extra breathing room above the hotbar/players row. */
@@ -127,7 +113,7 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
   /* ---------------------------- Lifecycle ---------------------------- */
 
   async _prepareContext() {
-    const trackers = TrackerStore.visibleFor(game.user).map((t) => this.#enrichTracker(t));
+    const trackers = TrackerStore.visibleFor(game.user).map(enrichTracker);
     const position = game.settings.get(MODULE_ID, SETTINGS.PANEL_POSITION);
     const scale = game.settings.get(MODULE_ID, SETTINGS.PANEL_SCALE);
     const autoCollapse = game.settings.get(MODULE_ID, SETTINGS.AUTO_COLLAPSE);
@@ -145,7 +131,7 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       scale,
       autoCollapse,
       collapsed,
-      label: this.#resolveLabel(),
+      label: resolvePanelLabel(),
       i18n: {
         title: game.i18n.localize("PURSUITTRACKER.Panel.Title"),
         pull: game.i18n.localize("PURSUITTRACKER.Panel.PullTab"),
@@ -164,39 +150,9 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
-  /**
-   * Resolve the panel label. The world setting wins when set; otherwise we
-   * fall back to the localized default. An empty/whitespace value also falls
-   * back, so admins can clear the field to revert to the default.
-   */
-  #resolveLabel() {
-    const raw = game.settings.get(MODULE_ID, SETTINGS.PANEL_LABEL);
-    if (typeof raw === "string" && raw.trim().length > 0) return raw.trim();
-    return game.i18n.localize("PURSUITTRACKER.Settings.PanelLabel.Default");
-  }
-
-  /** Compute the per-stage icons + dot percentage. */
-  #enrichTracker(t) {
-    const stages = Array.from({ length: t.stages }, (_, i) => ({
-      index: i,
-      icon: resolveStageIcon(t, i),
-      active: i === t.currentStage,
-      passed: i < t.currentStage
-    }));
-    const denom = Math.max(1, t.stages - 1);
-    return {
-      ...t,
-      displayName: t.name?.trim() || game.i18n.localize("PURSUITTRACKER.Tracker.Untitled"),
-      stagesArray: stages,
-      denom,
-      dotPercent: (t.currentStage / denom) * 100,
-      currentStageDisplay: t.currentStage + 1,
-      // Whether the current viewer can change this tracker's stage. The
-      // template uses this to gate advance/retreat buttons and to disable
-      // the stage buttons + drag dot when read-only.
-      canModify: canModifyTracker(game.user, t)
-    };
-  }
+  // The label resolver and per-tracker enrichment now live in
+  // scripts/utils/tracker-shared.js so the Tidy 5e tab integration can
+  // produce the same shape without duplicating the logic.
 
   /* ---------------------------- Render hooks ---------------------------- */
 

@@ -1,0 +1,69 @@
+{{!--
+  Tidy 5e Sheets tab content. Mirrors the floating panel's tracker rows
+  but with no pull tab and no header — Tidy's tab strip provides those.
+  Resizes with the sheet because the outer container is width:100% and
+  every inner block uses min-width:0 / flexible flex sizing.
+--}}
+<section class="pt-tab-root">
+  {{#unless pursuittracker.hasTrackers}}
+    <p class="pt-empty">{{pursuittracker.i18n.empty}}</p>
+  {{/unless}}
+
+  <ol class="pt-list">
+    {{#each pursuittracker.trackers as |tracker|}}
+      <li class="pt-tracker"
+          data-tracker-id="{{tracker.id}}"
+          style="background-image: url('{{tracker.background}}'); --pt-denom: {{tracker.denom}};">
+        <div class="pt-tracker-overlay"></div>
+
+        <div class="pt-tracker-header">
+          <span class="pt-tracker-name">{{tracker.displayName}}</span>
+          {{#if tracker.canModify}}
+            <div class="pt-tracker-actions">
+              <button type="button"
+                      class="pt-btn pt-btn-icon"
+                      data-action="retreat"
+                      data-tooltip="{{@root.pursuittracker.i18n.ret}}">
+                <i class="fa-solid fa-backward-step"></i>
+              </button>
+              <button type="button"
+                      class="pt-btn pt-btn-icon"
+                      data-action="advance"
+                      data-tooltip="{{@root.pursuittracker.i18n.adv}}">
+                <i class="fa-solid fa-forward-step"></i>
+              </button>
+            </div>
+          {{/if}}
+        </div>
+
+        <div class="pt-slider pt-slider-horizontal">
+          <div class="pt-track" aria-hidden="true"></div>
+
+          <ul class="pt-stages">
+            {{#each tracker.stagesArray as |stage|}}
+              <li class="pt-stage {{#if stage.active}}is-active{{/if}} {{#if stage.passed}}is-passed{{/if}}"
+                  style="--pt-stage-pos: {{stage.index}};">
+                <button type="button"
+                        class="pt-stage-btn"
+                        data-action="stage"
+                        data-stage="{{stage.index}}"
+                        {{#unless tracker.canModify}}disabled aria-disabled="true"{{/unless}}>
+                  <img class="pt-stage-icon" src="{{stage.icon}}" alt="" />
+                </button>
+              </li>
+            {{/each}}
+          </ul>
+
+          <div class="pt-status-dot"
+               style="--pt-dot: {{tracker.dotPercent}}%;"
+               role="slider"
+               aria-valuemin="1"
+               aria-valuemax="{{tracker.stages}}"
+               aria-valuenow="{{tracker.currentStageDisplay}}">
+            <img src="{{tracker.statusIcon}}" alt="" />
+          </div>
+        </div>
+      </li>
+    {{/each}}
+  </ol>
+</section>
