@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-04-29
+
+### Fixed
+
+- **Stage icons in the Tidy 5e tab were rendering at near-zero size.**
+  Tidy's component CSS applies a default `padding: 0px 12px 0.5px` to
+  every `<button>`, which collapsed the content area inside a 30 px
+  stage button to ~6 px and squeezed the SVG icon. Padding,
+  `box-sizing`, and `min/max-width` are now all set with `!important`
+  in both the CSS rule and the JS inline-style backstop.
+- Tab sizes are static (30 px stage / 28 px dot / 46 px slider). No
+  more container queries or chained `var()` lookups — those were
+  occasionally resolving to literal strings instead of pixel values
+  under Tidy and shrinking the icons unpredictably.
+
+### Added
+
+- **GM controls in the Tidy tab.** Each tracker row now shows the
+  eye / pen / trash buttons for GMs, matching the floating panel.
+  Toggling visibility, opening the config dialog, or deleting a
+  tracker now all work directly from a character sheet.
+- **`api.diagnose()` debug method.** Call from the F12 console for a
+  snapshot of the current user's role / isGM, the raw stored
+  trackers, and what `visibleFor` returns for the local user. Useful
+  for debugging "I'm a player but seeing GM-only trackers" reports.
+
+### Changed
+
+- **Hardened `TrackerStore.visibleFor`.** Requires both
+  `user.isGM === true` AND `user.role >= 3` (Assistant or above), and
+  the inner filter uses `=== true` for `visibleToPlayers` so a truthy
+  non-boolean value in the world setting can't sneak through.
+- Tab CSS rescoped from `.pursuittracker-tab` to `.pt-tab-root` (a
+  class we own on our own template root). The previous scope depended
+  on Tidy's `tabContentsClasses` being applied where we expected,
+  which it sometimes wasn't.
+- All theme CSS variables used by the tab now have literal pixel
+  fallbacks inside every `var()` call so a broken cascade resolves to
+  a real size, not `auto`.
+
 ## [1.1.0] - 2026-04-29
 
 ### Added
@@ -90,5 +130,6 @@ Initial release.
 - Keybind for toggling the panel (default `Ctrl+P`, configurable).
 - English localization.
 
+[1.1.1]: https://github.com/KonteiKeisei/pursuittracker/releases/tag/v1.1.1
 [1.1.0]: https://github.com/KonteiKeisei/pursuittracker/releases/tag/v1.1.0
 [1.0.0]: https://github.com/KonteiKeisei/pursuittracker/releases/tag/v1.0.0
