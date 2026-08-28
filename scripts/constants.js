@@ -14,7 +14,9 @@ export const SETTINGS = {
   PANEL_FREE_X: "panelFreeX",
   PANEL_FREE_Y: "panelFreeY",
   PANEL_LOCKED: "panelLocked",
-  PANEL_LABEL: "panelLabel"
+  PANEL_LABEL: "panelLabel",
+  PINNED_TRACKERS: "pinnedTrackers",
+  DRAWER_OPEN: "drawerOpen"
 };
 
 export const POSITIONS = {

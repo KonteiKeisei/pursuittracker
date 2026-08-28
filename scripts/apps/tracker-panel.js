@@ -78,7 +78,7 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     // otherwise overwrite our positioning.
     window: {
       frame: false,
-      positioned: true
+      positioned: false
     },
     actions: {
       create: TrackerPanel.#onCreate,
@@ -88,9 +88,10 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       advance: TrackerPanel.#onAdvance,
       retreat: TrackerPanel.#onRetreat,
       stage: TrackerPanel.#onStageClick,
-      collapse: TrackerPanel.#onCollapseToggle,
+      toggleDrawer: TrackerPanel.#onToggleDrawer,
       openSettings: TrackerPanel.#onOpenSettings,
-      toggleLock: TrackerPanel.#onToggleLock
+      toggleLock: TrackerPanel.#onToggleLock,
+      togglePin: TrackerPanel.#onTogglePin
     }
   };
 
@@ -113,16 +114,25 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
   /* ---------------------------- Lifecycle ---------------------------- */
 
   async _prepareContext() {
-    const trackers = TrackerStore.visibleFor(game.user).map(enrichTracker);
+    const available = TrackerStore.visibleFor(game.user);
+    const pinnedIds = game.settings.get(MODULE_ID, SETTINGS.PINNED_TRACKERS) ?? [];
+    const pinned = new Set(pinnedIds);
+    const trackers = available.filter((t) => pinned.has(t.id)).map(enrichTracker);
+    const availableTrackers = available.map((t) => ({
+      ...enrichTracker(t),
+      personallyVisible: pinned.has(t.id)
+    }));
     const position = game.settings.get(MODULE_ID, SETTINGS.PANEL_POSITION);
     const scale = game.settings.get(MODULE_ID, SETTINGS.PANEL_SCALE);
     const autoCollapse = game.settings.get(MODULE_ID, SETTINGS.AUTO_COLLAPSE);
-    const collapsed = game.settings.get(MODULE_ID, SETTINGS.PANEL_COLLAPSED);
+    const drawerOpen = game.settings.get(MODULE_ID, SETTINGS.DRAWER_OPEN);
     const isFree = position === POSITIONS.FREE;
     const locked = game.settings.get(MODULE_ID, SETTINGS.PANEL_LOCKED);
     return {
       isGM: game.user.isGM,
       trackers,
+      availableTrackers,
+      hasAvailableTrackers: availableTrackers.length > 0,
       hasTrackers: trackers.length > 0,
       position,
       isFree,
@@ -130,7 +140,7 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
       vertical: position === POSITIONS.LEFT || position === POSITIONS.RIGHT,
       scale,
       autoCollapse,
-      collapsed,
+      drawerOpen,
       label: resolvePanelLabel(),
       i18n: {
         title: game.i18n.localize("PURSUITTRACKER.Panel.Title"),
@@ -158,6 +168,7 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** Window resize listener — bound once, removed on close. */
   #onWindowResize = null;
+  #navigationHook = null;
 
   async _onFirstRender(context, options) {
     await super._onFirstRender?.(context, options);
@@ -167,6 +178,9 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     // against the (newly-sized) viewport edges.
     this.#onWindowResize = foundry.utils.debounce(() => this.#applyDockPosition(), 100);
     window.addEventListener("resize", this.#onWindowResize);
+    this.#navigationHook = Hooks.on("renderSceneNavigation", () => {
+      requestAnimationFrame(() => this.#applyDockPosition());
+    });
   }
 
   _onRender(context, options) {
@@ -175,8 +189,8 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!root) return;
 
     // Dataset attrs drive body expand/align styling in CSS.
-    root.dataset.position = context.position;
-    root.dataset.collapsed = String(!!context.collapsed);
+    root.dataset.position = POSITIONS.TOP_CENTER;
+    root.dataset.drawerOpen = String(!!context.drawerOpen);
     root.dataset.locked = String(!!context.locked);
     root.style.setProperty("--pt-scale", context.scale);
     root.style.setProperty("--pt-collapse-delay", `${this.#collapseDelay}s`);
@@ -184,23 +198,24 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     // Compute and write the body overlay direction (data-expand / data-align)
     // here so it stays in sync with the current dock position even when the
     // dock corner changes.
-    this.#updateBodyOrient(root, context.position);
+    this.#updateBodyOrient(root, POSITIONS.TOP_CENTER);
 
     // Re-apply the dock position on every render (cheap setPosition call).
     // This handles the case where the user changes the position setting:
     // refreshLayout fires render(), and then the panel relocates.
     if (!options.isFirstRender) this.#applyDockPosition();
 
-    this.#bindHover(root, context.autoCollapse);
     this.#bindDrag(root);
-    this.#enableFreeFloatDrag();
-    this.#kickIdleTimer(context.autoCollapse, context.collapsed);
   }
 
   async close(options) {
     if (this.#onWindowResize) {
       window.removeEventListener("resize", this.#onWindowResize);
       this.#onWindowResize = null;
+    }
+    if (this.#navigationHook != null) {
+      Hooks.off("renderSceneNavigation", this.#navigationHook);
+      this.#navigationHook = null;
     }
     this.#rootBound = false;
     return super.close(options);
@@ -215,67 +230,29 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   #applyDockPosition() {
     if (!this.element) return;
-    const pos = game.settings.get(MODULE_ID, SETTINGS.PANEL_POSITION);
-    const rect = this.element.getBoundingClientRect();
-    // Panel rect can read as 0 on the first call before layout settles —
-    // fall back to a tab-sized estimate so we don't compute nonsense.
-    const w = rect.width || 100;
-    const h = rect.height || 32;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const chrome = getChromeOffsets();
-
-    if (pos === POSITIONS.FREE) {
-      const x = Number(game.settings.get(MODULE_ID, SETTINGS.PANEL_FREE_X)) || 100;
-      const y = Number(game.settings.get(MODULE_ID, SETTINGS.PANEL_FREE_Y)) || 100;
-      const { x: cx, y: cy } = this.#clampFree(x, y, this.element);
-      this.setPosition({ left: cx, top: cy });
-      this.#updateBodyOrient(this.element, pos);
-      return;
-    }
-
-    let left;
-    let top;
-    switch (pos) {
-      case POSITIONS.TOP_LEFT:
-        left = chrome.left;
-        top = chrome.top;
-        break;
-      case POSITIONS.TOP_RIGHT:
-        left = vw - chrome.right - w;
-        top = chrome.top;
-        break;
-      case POSITIONS.TOP_CENTER:
-        left = (chrome.left + (vw - chrome.right) - w) / 2;
-        top = chrome.top;
-        break;
-      case POSITIONS.BOTTOM_LEFT:
-        left = chrome.left;
-        top = vh - chrome.bottom - h;
-        break;
-      case POSITIONS.BOTTOM_RIGHT:
-        left = vw - chrome.right - w;
-        top = vh - chrome.bottom - h;
-        break;
-      case POSITIONS.BOTTOM_CENTER:
-        left = (chrome.left + (vw - chrome.right) - w) / 2;
-        top = vh - chrome.bottom - h;
-        break;
-      case POSITIONS.LEFT:
-        left = chrome.left;
-        top = (chrome.top + (vh - chrome.bottom) - h) / 2;
-        break;
-      case POSITIONS.RIGHT:
-        left = vw - chrome.right - w;
-        top = (chrome.top + (vh - chrome.bottom) - h) / 2;
-        break;
-      default:
-        left = vw - chrome.right - w;
-        top = chrome.top;
-    }
-
-    this.setPosition({ left, top });
-    this.#updateBodyOrient(this.element, pos);
+    const navigation = document.querySelector("#navigation")
+      ?? document.querySelector("nav#scene-navigation")
+      ?? document.querySelector("#scene-navigation:not(.application)");
+    const rect = navigation?.getBoundingClientRect();
+    const measuredBottom = rect && rect.height > 0 ? rect.bottom : 0;
+    const outerRectIsUsable = measuredBottom > 0 && measuredBottom < window.innerHeight * 0.25;
+    const rowBottoms = navigation
+      ? [...navigation.querySelectorAll("*")]
+          .map((element) => element.getBoundingClientRect())
+          .filter((child) => (
+            child.width > 0 &&
+            child.height >= 20 &&
+            child.height <= 80 &&
+            child.top >= -2 &&
+            child.top <= 6 &&
+            child.bottom < window.innerHeight * 0.15
+          ))
+          .map((child) => child.bottom)
+      : [];
+    const visibleRowBottom = Math.max(0, ...rowBottoms);
+    const saneBottom = outerRectIsUsable ? measuredBottom : (visibleRowBottom || 39);
+    this.element.style.setProperty("--pt-dock-top", `${saneBottom}px`);
+    this.#updateBodyOrient(this.element, POSITIONS.TOP_CENTER);
   }
 
   /**
@@ -333,7 +310,16 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     // tracker marked visibleToPlayers — so the pull tab vanishes when no
     // tracker is visible to them, and reappears the instant the GM toggles
     // one on.
-    const shouldShow = isGM || (!restrict && visibleCount > 0);
+    const sceneId = canvas?.scene?.id;
+    // Combat hiding is scene-local. Foundry's game.combat and
+    // game.combats.active can point at a started encounter on a different
+    // scene, so only inspect encounters belonging to the viewed scene.
+    const combatActive = Boolean(game.combats?.some?.((combat) => {
+      if (!combat.started) return false;
+      const combatSceneId = combat.scene?.id ?? combat.sceneId;
+      return sceneId ? combatSceneId === sceneId : true;
+    }));
+    const shouldShow = !combatActive && (isGM || (!restrict && visibleCount > 0));
 
     if (!shouldShow) {
       if (this.rendered) await this.close({ animate: false });
@@ -347,8 +333,8 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   toggleCollapsed() {
-    const cur = game.settings.get(MODULE_ID, SETTINGS.PANEL_COLLAPSED);
-    return this.#setCollapsed(!cur);
+    const cur = game.settings.get(MODULE_ID, SETTINGS.DRAWER_OPEN);
+    return this.#setDrawerOpen(!cur);
   }
 
   /* ---------------------------- Internals ---------------------------- */
@@ -357,9 +343,9 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     return game.settings.get(MODULE_ID, SETTINGS.AUTO_COLLAPSE_DELAY) ?? 6;
   }
 
-  async #setCollapsed(collapsed) {
-    await game.settings.set(MODULE_ID, SETTINGS.PANEL_COLLAPSED, collapsed);
-    if (this.element) this.element.dataset.collapsed = String(collapsed);
+  async #setDrawerOpen(open) {
+    await game.settings.set(MODULE_ID, SETTINGS.DRAWER_OPEN, open);
+    if (this.element) this.element.dataset.drawerOpen = String(open);
   }
 
   #bindHover(root, autoCollapse) {
@@ -369,7 +355,7 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     this.#rootBound = true;
     if (!autoCollapse) return;
     const expand = () => {
-      if (root.dataset.collapsed === "true") this.#setCollapsed(false);
+      if (root.dataset.drawerOpen !== "true") this.#setDrawerOpen(true);
       this.#kickIdleTimer(true, false);
     };
     root.addEventListener("mouseenter", expand);
@@ -391,7 +377,7 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
         this.#kickIdleTimer(true, false);
         return;
       }
-      this.#setCollapsed(true);
+      this.#setDrawerOpen(false);
     }, this.#collapseDelay * 1000);
   }
 
@@ -603,6 +589,15 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     await TrackerStore.update(id, { visibleToPlayers: !t.visibleToPlayers });
   }
 
+  static async #onTogglePin(_event, target) {
+    const id = target.closest("[data-tracker-id]")?.dataset.trackerId;
+    if (!TrackerStore.visibleFor(game.user).some((tracker) => tracker.id === id)) return;
+    const current = new Set(game.settings.get(MODULE_ID, SETTINGS.PINNED_TRACKERS) ?? []);
+    if (current.has(id)) current.delete(id);
+    else current.add(id);
+    await game.settings.set(MODULE_ID, SETTINGS.PINNED_TRACKERS, [...current]);
+  }
+
   static async #onAdvance(_event, target) {
     const id = target.closest("[data-tracker-id]")?.dataset.trackerId;
     const t = TrackerStore.get(id);
@@ -626,7 +621,7 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     await requestStageChange(t, stage);
   }
 
-  static #onCollapseToggle() {
+  static #onToggleDrawer() {
     this.toggleCollapsed();
   }
 

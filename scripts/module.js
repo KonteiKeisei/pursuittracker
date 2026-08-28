@@ -78,6 +78,10 @@ Hooks.once("ready", async () => {
     panel.refreshLayout();
   });
 
+  for (const hook of ["createCombat", "updateCombat", "deleteCombat", "combatStart", "combatEnd"]) {
+    Hooks.on(hook, () => panel.refreshLayout());
+  }
+
   // Socket bridge.
   //   - REFRESH: any client can request a panel re-render on every other
   //     client (used as a hint for live previews — current code paths rely

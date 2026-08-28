@@ -174,7 +174,23 @@ export function registerSettings() {
     scope: "client",
     config: false,
     type: Boolean,
-    default: false
+    default: true
+  });
+
+  game.settings.register(MODULE_ID, SETTINGS.PINNED_TRACKERS, {
+    scope: "client",
+    config: false,
+    type: Array,
+    default: [],
+    onChange: reRenderPanel
+  });
+
+  game.settings.register(MODULE_ID, SETTINGS.DRAWER_OPEN, {
+    scope: "client",
+    config: false,
+    type: Boolean,
+    default: false,
+    onChange: reRenderPanel
   });
 
   // Free-float position state (per client, hidden from the settings UI —

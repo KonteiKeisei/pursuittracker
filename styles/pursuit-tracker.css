@@ -26,11 +26,9 @@
     --pt-dot-size: 22px;
     --pt-scale: 1;
     --pt-collapse-delay: 6s;
-    /* Stack high enough to always sit above Foundry chrome (sidebar ~50,
-       hotbar ~60, hud ~70, popped-out apps ~100) so the pull tab is never
-       hidden behind another UI element and is always clickable. Stays
-       comfortably below modal dialogs (~250+) and tooltips (~9999). */
-    --pt-z: 200;
+    /* Keep the tracker immediately above the canvas, but below Foundry's
+       chrome, applications, dialogs, and other interface elements. */
+    --pt-z: 49;
     /* Gutter between the panel and Foundry's chrome. The --pt-safe-* vars
        are populated at runtime by UISafeArea; the fallbacks here are a
        reasonable "no chrome detected" guess. */
@@ -43,7 +41,81 @@
     color: var(--pt-fg);
     font-family: var(--font-primary, "Signika", sans-serif);
     pointer-events: auto;
-  }
+}
+
+/* Top dock revamp. These final rules intentionally override legacy dock modes. */
+.pursuittracker-panel { max-width: calc(100vw - 32px); }
+.pursuittracker .pt-top-dock {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+}
+.pursuittracker .pt-pinned-strip {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  max-width: calc(100vw - 190px);
+}
+.pursuittracker .pt-tracker-pinned {
+  flex: 0 0 auto;
+  width: var(--pt-tracker-w);
+  min-height: 58px;
+  padding: 5px 10px 8px;
+}
+.pursuittracker .pt-tracker-pinned .pt-tracker-name {
+  display: block;
+  margin-bottom: 2px;
+  text-align: center;
+  font-size: 11px;
+}
+.pursuittracker .pt-picker {
+  top: 100% !important;
+  bottom: auto !important;
+  left: 0 !important;
+  right: auto !important;
+  width: 250px;
+  margin: 6px 0 0 !important;
+}
+.pursuittracker .pt-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pursuittracker .pt-picker-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 7px 9px;
+  text-align: left;
+}
+.pursuittracker .pt-picker-option.is-on {
+  color: var(--pt-accent-strong);
+  border-color: var(--pt-accent);
+}
+.pursuittracker-panel[data-collapsed="true"] .pt-picker {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-5px) scale(0.96) !important;
+}
+.pursuittracker-panel[data-collapsed="false"] .pt-picker {
+  opacity: 1;
+  visibility: visible;
+  transform: none !important;
+}
 
   /* ============================ Panel container ============================ */
   /*
@@ -55,8 +127,8 @@
    */
   .pursuittracker-panel {
     position: fixed;
-    /* !important keeps the pull tab clickable even if another module or a
-       framework default tries to demote our stacking context. */
+    /* Prevent ApplicationV2 focus handling from promoting this HUD above
+       dialogs or other interface elements. */
     z-index: var(--pt-z) !important;
     /* width/height: auto — driven by the tab's intrinsic size. */
     transition: transform 0.25s ease;
@@ -709,3 +781,410 @@
     margin: 0;
     font-size: 12px;
   }
+
+/* Final top-dock overrides, kept last for compatibility with legacy rules. */
+.pursuittracker-panel {
+  position: fixed !important;
+  top: var(--pt-dock-top, 68px) !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: max-content !important;
+  height: auto !important;
+  max-width: calc(100vw - 32px);
+  margin: 0 !important;
+  transform: translateX(-50%) !important;
+}
+.pursuittracker .pt-top-dock { display:flex; align-items:flex-start; justify-content:center; gap:6px; width:max-content; max-width:calc(100vw - 32px); }
+.pursuittracker .pt-pinned-strip { display:flex; flex-flow:row nowrap; align-items:flex-start; gap:6px; margin:0; padding:0; list-style:none; overflow-x:auto; max-width:calc(100vw - 190px); }
+.pursuittracker .pt-tracker-pinned { flex:0 0 auto; width:var(--pt-tracker-w); min-height:58px; padding:5px 10px 8px; }
+.pursuittracker .pt-tracker-pinned .pt-tracker-name { display:block; margin-bottom:2px; text-align:center; font-size:11px; }
+.pursuittracker .pt-picker { top:100% !important; bottom:auto !important; left:0 !important; right:auto !important; width:250px; margin:6px 0 0 !important; }
+.pursuittracker .pt-picker-list { display:flex; flex-direction:column; gap:4px; margin:0; padding:0; list-style:none; }
+.pursuittracker .pt-picker-option { display:flex; align-items:center; gap:8px; width:100%; margin:0; padding:7px 9px; text-align:left; }
+.pursuittracker .pt-picker-option.is-on { color:var(--pt-accent-strong); border-color:var(--pt-accent); }
+.pursuittracker-panel[data-collapsed="true"] .pt-picker { opacity:0; visibility:hidden; pointer-events:none; transform:translateY(-5px) scale(0.96) !important; }
+.pursuittracker-panel[data-collapsed="false"] .pt-picker { opacity:1; visibility:visible; transform:none !important; }
+
+/* 2.1 pull-down pursuit ladder. */
+.pursuittracker .pt-drawer-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: min(var(--pt-tracker-w), calc(100vw - 32px));
+  margin: 0;
+  padding: 0;
+}
+.pursuittracker .pt-pinned-ladder {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pursuittracker .pt-pinned-ladder .pt-tracker-pinned {
+  width: 100%;
+  min-height: 62px;
+  margin: 0;
+  padding: 5px 12px 9px;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.34);
+}
+.pursuittracker .pt-pinned-ladder .pt-status-dot {
+  display: none !important;
+}
+.pursuittracker .pt-drawer-stack > .pt-pull-tab {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: 25px;
+  margin: 0;
+  padding: 5px 14px;
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  animation: none !important;
+  transform: translateY(-3px);
+  transition: opacity 150ms ease, transform 150ms ease, background 150ms ease;
+}
+.pursuittracker .pt-drawer-stack:hover > .pt-pull-tab,
+.pursuittracker-panel[data-collapsed="false"] .pt-drawer-stack > .pt-pull-tab,
+.pursuittracker .pt-drawer-stack > .pt-pull-tab:focus-visible {
+  opacity: 1;
+  transform: none;
+}
+.pursuittracker .pt-drawer-stack > .pt-pull-tab .pt-pull-label {
+  flex: 1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pursuittracker .pt-drawer-stack > .pt-picker {
+  position: relative !important;
+  inset: auto !important;
+  order: 3;
+  width: 100%;
+  max-width: 100%;
+  max-height: 420px;
+  margin: 2px 0 0 !important;
+  border-radius: 0 0 8px 8px;
+  transform: none !important;
+  transform-origin: top center;
+  transition: max-height 180ms ease, opacity 140ms ease, padding 180ms ease, border-width 180ms ease;
+}
+.pursuittracker-panel[data-collapsed="true"] .pt-drawer-stack > .pt-picker {
+  max-height: 0;
+  margin-top: 0 !important;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-width: 0;
+  opacity: 0;
+  visibility: hidden;
+  overflow: hidden;
+  pointer-events: none;
+  transform: none !important;
+}
+.pursuittracker-panel[data-collapsed="false"] .pt-drawer-stack > .pt-picker {
+  opacity: 1;
+  visibility: visible;
+  overflow: hidden auto;
+  pointer-events: auto;
+}
+
+/* ========================================================================== */
+/* Pursuit panel 2.3. This interface uses unique classes and no legacy panel. */
+/* ========================================================================== */
+.pursuittracker-panel {
+  position: fixed !important;
+  display: block !important;
+  top: var(--pt-dock-top, 62px) !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: min(560px, calc(100vw - 32px)) !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 32px) !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  transform: translateX(-50%) !important;
+}
+
+.pursuittracker-panel > .kpursuit-ladder {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+.pursuittracker-panel .kpursuit-row {
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  min-height: 74px !important;
+  margin: 0 !important;
+  padding: 8px 18px 11px !important;
+  overflow: hidden !important;
+  border: 1px solid var(--pt-accent) !important;
+  border-top: 0 !important;
+  border-radius: 0 0 9px 9px !important;
+  background-color: rgba(22, 22, 29, 0.96) !important;
+  background-position: center !important;
+  background-size: cover !important;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35) !important;
+  box-sizing: border-box !important;
+}
+
+.pursuittracker-panel .kpursuit-shade {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  background: rgba(12, 12, 18, 0.48) !important;
+  pointer-events: none !important;
+}
+
+.pursuittracker-panel .kpursuit-name {
+  position: relative !important;
+  z-index: 1 !important;
+  display: block !important;
+  margin: 0 0 9px !important;
+  color: var(--pt-fg) !important;
+  text-align: center !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+}
+
+.pursuittracker-panel .kpursuit-progress {
+  position: relative !important;
+  z-index: 1 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 32px !important;
+}
+
+.pursuittracker-panel .kpursuit-line {
+  position: absolute !important;
+  top: 50% !important;
+  right: 15px !important;
+  left: 15px !important;
+  height: 3px !important;
+  transform: translateY(-50%) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.28) !important;
+}
+
+.pursuittracker-panel .kpursuit-stages {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  height: 32px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+.pursuittracker-panel .kpursuit-stage {
+  position: relative !important;
+  display: block !important;
+  flex: 0 0 30px !important;
+  width: 30px !important;
+  height: 30px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.pursuittracker-panel .kpursuit-stage-button {
+  display: grid !important;
+  place-items: center !important;
+  width: 30px !important;
+  min-width: 30px !important;
+  max-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 2px solid var(--pt-accent) !important;
+  border-radius: 50% !important;
+  background: rgba(18, 18, 24, 0.96) !important;
+  color: var(--pt-accent-strong) !important;
+  box-shadow: none !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+
+.pursuittracker-panel .kpursuit-stage.is-passed .kpursuit-stage-button {
+  background: rgba(210, 177, 90, 0.2) !important;
+}
+
+.pursuittracker-panel .kpursuit-stage.is-current .kpursuit-stage-button {
+  background: var(--pt-accent) !important;
+  color: #171717 !important;
+}
+
+.pursuittracker-panel > .kpursuit-tab {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  min-height: 30px !important;
+  margin: 0 !important;
+  padding: 5px 16px !important;
+  border: 1px solid var(--pt-accent) !important;
+  border-top: 0 !important;
+  border-radius: 0 0 9px 9px !important;
+  background: rgba(23, 23, 30, 0.98) !important;
+  color: var(--pt-accent-strong) !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3) !important;
+  opacity: 0 !important;
+  transform: translateY(-5px) !important;
+  animation: none !important;
+  box-sizing: border-box !important;
+  transition: opacity 150ms ease, transform 150ms ease, background 150ms ease !important;
+}
+
+.pursuittracker-panel:hover > .kpursuit-tab,
+.pursuittracker-panel > .kpursuit-tab:focus-visible,
+.pursuittracker-panel[data-drawer-open="true"] > .kpursuit-tab {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+.pursuittracker-panel > .kpursuit-tab > span {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-align: center !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-weight: 600 !important;
+}
+
+.pursuittracker-panel > .kpursuit-drawer {
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  overflow: hidden !important;
+  border: 0 solid var(--pt-accent) !important;
+  border-radius: 0 0 9px 9px !important;
+  background: rgba(21, 21, 27, 0.98) !important;
+  box-shadow: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  box-sizing: border-box !important;
+  transition: max-height 180ms ease, opacity 140ms ease, padding 180ms ease, border-width 180ms ease !important;
+}
+
+.pursuittracker-panel[data-drawer-open="true"] > .kpursuit-drawer {
+  max-height: 420px !important;
+  margin-top: 2px !important;
+  padding: 10px 12px 12px !important;
+  overflow: hidden auto !important;
+  border-width: 0 1px 1px !important;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.38) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.pursuittracker-panel .kpursuit-drawer-header {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 0 0 8px !important;
+}
+
+.pursuittracker-panel .kpursuit-drawer-header h3 {
+  margin: 0 !important;
+  color: var(--pt-accent-strong) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-align: left !important;
+  text-transform: uppercase !important;
+}
+
+.pursuittracker-panel .kpursuit-drawer-actions {
+  display: flex !important;
+  gap: 6px !important;
+}
+
+.pursuittracker-panel .kpursuit-icon-button {
+  display: grid !important;
+  place-items: center !important;
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 28px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.pursuittracker-panel .kpursuit-options {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+.pursuittracker-panel .kpursuit-options > li {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.14) !important;
+}
+
+.pursuittracker-panel .kpursuit-option {
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 8px 4px !important;
+  color: var(--pt-fg) !important;
+  box-sizing: border-box !important;
+}
+
+.pursuittracker-panel .kpursuit-option input {
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+}
+
+.pursuittracker-panel .kpursuit-empty {
+  margin: 0 !important;
+  padding: 10px 4px !important;
+  color: var(--pt-fg-muted) !important;
+  text-align: center !important;
+}
+
+@media (max-width: 620px) {
+  .pursuittracker-panel {
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px) !important;
+  }
+}

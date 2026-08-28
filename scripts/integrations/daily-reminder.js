@@ -81,8 +81,7 @@ async function promptDailyReminder() {
         callback: () => {
           const panel = game.modules.get(MODULE_ID)?.api?.panel;
           panel?.refreshLayout();
-          // Force-expand if collapsed.
-          if (panel?.element?.dataset.collapsed === "true") panel.toggleCollapsed();
+          if (panel?.element?.dataset.drawerOpen !== "true") panel.toggleCollapsed();
         }
       },
       { action: "dismiss", label: "PURSUITTRACKER.Reminder.Dismiss" }

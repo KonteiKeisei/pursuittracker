@@ -225,7 +225,7 @@ CSS file into your world to override:
   --pt-tracker-w: 360px;
   --pt-stage-size: 28px;
   --pt-dot-size: 22px;
-  --pt-z: 200;
+  --pt-z: 49;
 }
 ```
 

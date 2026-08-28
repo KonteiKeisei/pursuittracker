@@ -19,6 +19,7 @@ import { TrackerConfig } from "../apps/tracker-config.js";
 export function enrichTracker(tracker) {
   const stages = Array.from({ length: tracker.stages }, (_, i) => ({
     index: i,
+    number: i + 1,
     icon: resolveStageIcon(tracker, i),
     active: i === tracker.currentStage,
     passed: i < tracker.currentStage
