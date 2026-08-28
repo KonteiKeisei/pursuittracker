@@ -311,11 +311,11 @@ export class TrackerPanel extends HandlebarsApplicationMixin(ApplicationV2) {
     // tracker is visible to them, and reappears the instant the GM toggles
     // one on.
     const sceneId = canvas?.scene?.id;
-    // Combat hiding is scene-local. Foundry's game.combat and
-    // game.combats.active can point at a started encounter on a different
-    // scene, so only inspect encounters belonging to the viewed scene.
+    // Combat hiding is scene-local and begins as soon as an encounter is
+    // created. Foundry's game.combat and game.combats.active can point at an
+    // encounter on a different scene, so inspect the full collection and
+    // match only encounters belonging to the viewed scene.
     const combatActive = Boolean(game.combats?.some?.((combat) => {
-      if (!combat.started) return false;
       const combatSceneId = combat.scene?.id ?? combat.sceneId;
       return sceneId ? combatSceneId === sceneId : true;
     }));
