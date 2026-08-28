@@ -163,7 +163,9 @@ export function registerSettings() {
     name: "PURSUITTRACKER.Settings.DefaultStatusIcon.Name",
     hint: "PURSUITTRACKER.Settings.DefaultStatusIcon.Hint",
     scope: "world",
-    config: true,
+    // Retained as hidden legacy data so existing worlds and API consumers do
+    // not lose their stored value. Numbered CSS stages no longer use it.
+    config: false,
     type: String,
     default: PATHS.status,
     filePicker: "image"

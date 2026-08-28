@@ -93,7 +93,7 @@ function registerTab(api) {
       if (!tabContentsElement) return;
       bindTrackerInteractions(tabContentsElement, { vertical: false });
       // Inline-style backstop. Tidy's Svelte component CSS keeps clamping
-      // our stage / dot / icon sizes via `[data-svelte-...]` selectors that
+      // our numbered stage sizes via `[data-svelte-...]` selectors that
       // out-specificity our three-class rules, even with !important. Inline
       // styles with the `important` priority sit above any CSS short of
       // browser-default user-agent !important — the only thing that
@@ -109,7 +109,7 @@ function registerTab(api) {
 }
 
 /**
- * Force the stage / dot dimensions inline. Tidy's Svelte component CSS
+ * Force the stage dimensions inline. Tidy's Svelte component CSS
  * scopes its resets via attribute selectors that out-specificity any
  * three-class rule we can write, and inline styles with the `important`
  * priority are the only safe winning move.
@@ -119,18 +119,16 @@ function registerTab(api) {
  * panel defaults if the cascade can't resolve them.
  */
 /**
- * Force the stage / dot dimensions inline. Static values, no var() lookup
+ * Force the stage dimensions inline. Static values, no var() lookup
  * — the cascade was unreliable under Tidy's component CSS, and we'd
  * rather have a known-good size than a "correct" expression that resolves
  * to something microscopic. Update these constants together with the CSS
  * literals in the .pt-tab-root rules.
  */
 const TAB_STAGE_SIZE_PX = 30;
-const TAB_DOT_SIZE_PX = 28;
 
 function forceStageSizing(root) {
   const stageSize = `${TAB_STAGE_SIZE_PX}px`;
-  const dotSize = `${TAB_DOT_SIZE_PX}px`;
   const sliderHeight = `${TAB_STAGE_SIZE_PX + 16}px`;
 
   const setSize = (el, w, h) => {
@@ -149,14 +147,30 @@ function forceStageSizing(root) {
     el.style.setProperty("min-width", "0", "important");
     el.style.setProperty("min-height", "0", "important");
   };
-  for (const stage of root.querySelectorAll(".pt-stage")) setSize(stage, stageSize, stageSize);
-  for (const btn of root.querySelectorAll(".pt-stage-btn")) {
+  for (const stage of root.querySelectorAll(".pt-stage")) {
+    setSize(stage, stageSize, stageSize);
+    const btn = stage.querySelector(".pt-stage-btn");
+    if (!btn) continue;
     setSize(btn, "100%", "100%");
     stripButtonPadding(btn);
+    btn.style.setProperty("display", "grid", "important");
+    btn.style.setProperty("place-items", "center", "important");
+    btn.style.setProperty("border", "2px solid var(--pt-accent, #d2b15a)", "important");
+    btn.style.setProperty("border-radius", "50%", "important");
+    btn.style.setProperty("background", "rgba(18, 18, 24, 0.96)", "important");
+    btn.style.setProperty("color", "var(--pt-accent-strong, #f1c869)", "important");
+    btn.style.setProperty("font-size", "12px", "important");
+    btn.style.setProperty("font-weight", "600", "important");
+    btn.style.setProperty("line-height", "1", "important");
+    if (stage.classList.contains("is-passed")) {
+      btn.style.setProperty("background", "rgba(210, 177, 90, 0.2)", "important");
+    }
+    if (stage.classList.contains("is-active")) {
+      btn.style.setProperty("background", "var(--pt-accent, #d2b15a)", "important");
+      btn.style.setProperty("color", "#171717", "important");
+      btn.style.setProperty("box-shadow", "none", "important");
+    }
   }
-  for (const icon of root.querySelectorAll(".pt-stage-icon")) setSize(icon, "100%", "100%");
-  for (const dot of root.querySelectorAll(".pt-status-dot")) setSize(dot, dotSize, dotSize);
-  for (const dotImg of root.querySelectorAll(".pt-status-dot img")) setSize(dotImg, "100%", "100%");
   for (const sl of root.querySelectorAll(".pt-slider")) {
     sl.style.setProperty("height", sliderHeight, "important");
     sl.style.setProperty("min-height", sliderHeight, "important");

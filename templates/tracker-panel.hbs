@@ -51,6 +51,15 @@
           <input type="checkbox" data-action="togglePin" {{#if tracker.personallyVisible}}checked{{/if}}>
           <span>{{tracker.displayName}}</span>
         </label>
+        {{#if @root.isGM}}
+          <button type="button"
+                  class="kpursuit-icon-button kpursuit-option-edit"
+                  data-action="edit"
+                  data-tooltip="{{@root.i18n.edit}}"
+                  aria-label="{{@root.i18n.edit}}: {{tracker.displayName}}">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+        {{/if}}
       </li>
     {{/each}}
   </ol>

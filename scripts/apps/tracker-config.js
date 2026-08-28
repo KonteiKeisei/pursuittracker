@@ -24,8 +24,6 @@ export class TrackerConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     },
     actions: {
       pickBackground: TrackerConfig.#pickFile("background"),
-      pickStatusIcon: TrackerConfig.#pickFile("statusIcon"),
-      pickStageIcon: TrackerConfig.#pickStageIcon,
       delete: TrackerConfig.#onDelete
     }
   };
@@ -57,18 +55,11 @@ export class TrackerConfig extends HandlebarsApplicationMixin(ApplicationV2) {
   async _prepareContext() {
     const t = this.#tracker;
     if (!t) return { tracker: null };
-    const stageOptions = Array.from({ length: t.stages }, (_, i) => ({
-      index: i,
-      label: i + 1,
-      value: t.stageIcons?.[i] ?? "",
-      defaultIcon: PATHS.stage(i + 1)
-    }));
     const stageCounts = [];
     for (let n = STAGES_MIN; n <= STAGES_MAX; n++) stageCounts.push(n);
     return {
       tracker: t,
       stageCounts,
-      stageOptions,
       stagesMin: STAGES_MIN,
       stagesMax: STAGES_MAX,
       currentStageOptions: Array.from({ length: t.stages }, (_, i) => ({
@@ -85,24 +76,13 @@ export class TrackerConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     const stages = Math.max(STAGES_MIN, Math.min(STAGES_MAX, Number(data.stages) || STAGES_MIN));
     const currentStage = Math.max(0, Math.min(stages - 1, Number(data.currentStage) || 0));
 
-    // Collect per-stage icon overrides (sparse object → array).
-    const stageIcons = [];
-    if (data.stageIcons && typeof data.stageIcons === "object") {
-      for (let i = 0; i < stages; i++) {
-        stageIcons.push(data.stageIcons[i] ?? "");
-      }
-    }
-
     await TrackerStore.update(this.trackerId, {
       name: String(data.name ?? "").trim(),
       stages,
       currentStage,
       visibleToPlayers: !!data.visibleToPlayers,
       playerEditable: !!data.playerEditable,
-      background: String(data.background ?? "").trim() || PATHS.bg,
-      statusIcon: String(data.statusIcon ?? "").trim() || PATHS.status,
-      useCustomStageIcons: !!data.useCustomStageIcons,
-      stageIcons
+      background: String(data.background ?? "").trim() || PATHS.bg
     });
     ui.notifications.info(game.i18n.localize("PURSUITTRACKER.Notifications.Saved"));
   }
@@ -125,22 +105,6 @@ export class TrackerConfig extends HandlebarsApplicationMixin(ApplicationV2) {
       });
       fp.render({ force: true });
     };
-  }
-
-  static async #pickStageIcon(_event, target) {
-    const idx = Number(target.dataset.stage);
-    if (!Number.isFinite(idx)) return;
-    const input = this.element.querySelector(`[name="stageIcons.${idx}"]`);
-    if (!input) return;
-    const fp = new foundry.applications.apps.FilePicker.implementation({
-      type: "image",
-      current: input.value,
-      callback: (path) => {
-        input.value = path;
-        input.dispatchEvent(new Event("change", { bubbles: true }));
-      }
-    });
-    fp.render({ force: true });
   }
 
   static async #onDelete() {

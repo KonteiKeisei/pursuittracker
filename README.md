@@ -16,12 +16,11 @@ Built for Foundry V13 (compatible with V12) using ApplicationV2.
 ## Features
 
 - **Multiple trackers** in a single panel, each with its own name, background,
-  stage icons, status marker, and slider.
-- **3 to 10 stages** per tracker, equidistant. The status marker snaps to a
-  stage when you click one or drag the dot.
-- **Bundled SVG icons** numbered 1 through 10 for stages, plus a default
-  status marker and panel background. Replace any icon per-tracker, or set
-  module-wide defaults.
+  numbered stages, and progress line.
+- **3 to 10 stages** per tracker, equidistant. Click a numbered stage to
+  update the pursuit.
+- **Consistent numbered markers** across the top dock and Tidy sheet tab,
+  plus a configurable tracker background.
 - **Nine panel positions**: top-left/center/right, bottom-left/center/right,
   left, right, and free-float. Free-float can be dragged anywhere, then
   locked in place.
@@ -65,11 +64,11 @@ save. The panel appears in the bottom-left of the canvas by default.
    after one second of inactivity by default, hover the tab to bring it back.
 2. **Create a pursuit** (GM only). Click the **+** button in the panel header.
    The tracker config dialog opens.
-3. **Configure it.** Give it a name, choose a number of stages (3–10), pick
-   icons if you want to override the defaults, and decide whether players see
-   it (and whether they can adjust it).
-4. **Advance / retreat.** Use the chevron buttons in the tracker row, click a
-   specific stage on the slider, or drag the status dot.
+3. **Configure it.** Give it a name, choose a number of stages (3–10), select
+   a background, and decide whether players see it (and whether they can
+   adjust it).
+4. **Advance / retreat.** Use the tracker controls or click a specific
+   numbered stage.
 5. **Tweak the panel.** Open module settings via the gear icon to change
    position, scale, label, auto-collapse delay, or daily reminder source.
 
@@ -85,7 +84,6 @@ save. The panel appears in the bottom-left of the canvas by default.
 | **Panel label** | Text shown on the pull tab and panel header. Leave empty to use the default ("Pursuit Tracker"). |
 | **Daily reminder** | Source of the once-per-day prompt: off, auto-detect, Calendaria, or Rest Recovery 5e. |
 | **Default tracker background** | Background image used for newly-created trackers. |
-| **Default status (progress) icon** | The marker that snaps to stages on new trackers. |
 
 ### Client scope (each user controls their own)
 
@@ -115,13 +113,10 @@ tracker row).
 |---|---|
 | **Name** | Shown in the tracker header. |
 | **Number of stages** | 3 to 10. The slider redraws with that many stops. |
-| **Current stage** | Where the status marker sits right now. |
+| **Current stage** | The numbered stage highlighted as current. |
 | **Visible to players** | Players see the tracker on their own panels. Without this, they can't see it at all. |
-| **Players can adjust this tracker** | Players who can see the tracker can also advance, retreat, click a stage, or drag the dot. They can never change its name, icons, or visibility. |
+| **Players can adjust this tracker** | Players who can see the tracker can also advance, retreat, or click a stage. They can never change its name or visibility. |
 | **Background image** | Per-tracker background (file picker). Leave blank to use the module-wide default. |
-| **Status (progress) icon** | The marker that moves between stages. |
-| **Use custom stage icons** | When on, replace the bundled numbered icons (1–10) with your own per-stage. |
-| **Per-stage icon overrides** | Only used when the toggle above is on. |
 
 ---
 
@@ -203,13 +198,11 @@ Pursuit Tracker emits one custom hook:
 
 ## Customization
 
-### Replace the bundled icons
+### Replace the default background
 
-The numbered icons live at `assets/icons/stages/1.svg` through
-`10.svg`. The default status marker is at `assets/icons/status/default.svg`,
-and the default background at `assets/backgrounds/default.svg`. Replace
-files in your world's `Data/modules/pursuittracker/assets/` directory, or
-override per tracker / module-wide via the file pickers in settings.
+The default background lives at `assets/backgrounds/default.svg`. Replace it
+in your world's `Data/modules/pursuittracker/assets/` directory, or choose a
+different image with the per-tracker or module-wide file picker.
 
 ### Theme the panel
 

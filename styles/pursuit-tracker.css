@@ -548,25 +548,6 @@
     flex: 1 1 auto;
     min-width: 0;
   }
-  .pursuittracker-config .pt-stage-icons {
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 4px;
-    padding: 6px 10px;
-    margin: 8px 0;
-  }
-  .pursuittracker-config .pt-stage-icons[disabled] { opacity: 0.45; pointer-events: none; }
-  .pursuittracker-config .pt-stage-icons legend {
-    padding: 0 6px;
-    font-size: 12px;
-    color: var(--pt-fg-muted, #aaa);
-  }
-  .pursuittracker-config .pt-stage-preview {
-    width: 28px;
-    height: 28px;
-    object-fit: contain;
-    background: rgba(0,0,0,0.25);
-    border-radius: 4px;
-  }
   .pursuittracker-config .form-footer {
     flex: 0 0 auto;
     display: flex;
@@ -716,18 +697,24 @@
     justify-content: center;
     padding: 0 !important;
     box-sizing: border-box !important;
-    border: 2px solid rgba(255, 255, 255, 0.35);
-    background: rgba(0, 0, 0, 0.55);
-    border-radius: 50%;
+    border: 2px solid var(--pt-accent, #d2b15a) !important;
+    background: rgba(18, 18, 24, 0.96) !important;
+    color: var(--pt-accent-strong, #f1c869) !important;
+    border-radius: 50% !important;
     cursor: pointer;
     overflow: hidden;
     line-height: 1;
+    font-size: 12px;
+    font-weight: 600;
   }
   .pt-tab-root .pt-stage-btn:disabled { cursor: default; }
-  .pt-tab-root .pt-stage.is-passed .pt-stage-btn { border-color: var(--pt-accent, #d2b15a); }
+  .pt-tab-root .pt-stage.is-passed .pt-stage-btn {
+    background: rgba(210, 177, 90, 0.2) !important;
+  }
   .pt-tab-root .pt-stage.is-active .pt-stage-btn {
-    border-color: var(--pt-accent-strong, #f1c869);
-    box-shadow: 0 0 10px var(--pt-accent-strong, #f1c869);
+    background: var(--pt-accent, #d2b15a) !important;
+    color: #171717 !important;
+    box-shadow: none !important;
   }
   .pt-tab-root .pt-stage-icon {
     display: block;
@@ -1153,6 +1140,9 @@
 }
 
 .pursuittracker-panel .kpursuit-options > li {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
   width: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -1163,11 +1153,17 @@
   display: flex !important;
   align-items: center !important;
   gap: 9px !important;
-  width: 100% !important;
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
   margin: 0 !important;
   padding: 8px 4px !important;
   color: var(--pt-fg) !important;
   box-sizing: border-box !important;
+}
+
+.pursuittracker-panel .kpursuit-option-edit {
+  flex: 0 0 auto !important;
 }
 
 .pursuittracker-panel .kpursuit-option input {

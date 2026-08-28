@@ -72,21 +72,14 @@
                         class="pt-stage-btn"
                         data-action="stage"
                         data-stage="{{stage.index}}"
+                        aria-label="{{tracker.displayName}} stage {{stage.number}}"
                         {{#unless tracker.canModify}}disabled aria-disabled="true"{{/unless}}>
-                  <img class="pt-stage-icon" src="{{stage.icon}}" alt="" />
+                  {{stage.number}}
                 </button>
               </li>
             {{/each}}
           </ul>
 
-          <div class="pt-status-dot"
-               style="--pt-dot: {{tracker.dotPercent}}%;"
-               role="slider"
-               aria-valuemin="1"
-               aria-valuemax="{{tracker.stages}}"
-               aria-valuenow="{{tracker.currentStageDisplay}}">
-            <img src="{{tracker.statusIcon}}" alt="" />
-          </div>
         </div>
       </li>
     {{/each}}
